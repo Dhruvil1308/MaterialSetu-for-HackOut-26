@@ -1,0 +1,46 @@
+# Keeps the free Render instance from sleeping.
+#
+# A free web service spins down after about 15 minutes without traffic, and the
+# next request then pays a cold start of roughly a minute. This pings the health
+# endpoint often enough that the window never elapses.
+#
+# GitHub's scheduler is best-effort and frequently runs a scheduled job late, so
+# one run on its own is not dependable. Each run therefore keeps pinging for a
+# quarter of an hour, and runs are allowed to overlap, which covers the gap when
+# the scheduler is behind.
+#
+# This is a workaround, not a fix. The supported answer is a paid instance, which
+# does not sleep at all. Note also that Render's free allowance is 750 instance
+# hours a month and a month is up to 744 hours, so one always-awake free service
+# fits and a second one would not.
+
+name: Keep the API warm
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: keep-warm
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Ping the health endpoint for 15 minutes
+        env:
+          # Override in Settings -> Secrets and variables -> Actions -> Variables
+          API_URL: ${{ vars.API_URL || 'https://materialsetu-for-hackout-26.onrender.com' }}
+        run: |
+          for i in $(seq 1 8); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -m 90 "$API_URL/api/health" || echo 000)
+            printf '%s  ping %d/8 -> HTTP %s\n' "$(date -u +%H:%M:%S)" "$i" "$code"
+            if [ "$i" -lt 8 ]; then sleep 120; fi
+          done
+          # Fail only if the very last ping failed, so one blip does not raise noise.
+          test "$code" = "200"
