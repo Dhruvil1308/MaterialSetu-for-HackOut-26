@@ -859,15 +859,95 @@ def review_evidence(
 
 @app.post("/api/admin/gst/{bid}")
 def review_gst(bid: str, data: Decision, user=Depends(admin), db=Depends(db_session)):
+    """Record a decision. A settled one can be revisited - a registration can
+    lapse, and a reviewer can be wrong - but never on your own business."""
     b = db.get(Business, bid)
-    if not b or b.gst_status != "pending":
-        fail(404, "Pending GST submission not found.")
+    if not b:
+        fail(404, "Business not found.")
+    if not b.gstin:
+        fail(409, "This business has not given a GST number to review.")
     if bid == user.id:
         fail(403, "Reviewers cannot approve their own GST details.")
     b.gst_status = "reviewed" if data.approved else "rejected"
     b.gst_reference = data.reference
     db.commit()
-    return {"status": b.gst_status}
+    return admin_business(db, b)
+
+
+class AdminGST(BaseModel):
+    gstin: str = Field(min_length=15, max_length=15)
+    reference: str = Field(min_length=8, max_length=500)
+
+
+@app.put("/api/admin/gst/{bid}")
+def set_gst(bid: str, data: AdminGST, user=Depends(admin), db=Depends(db_session)):
+    """Enter or correct a GST number on a business's behalf - a typo, or a
+    number given over the phone. It goes in unreviewed: entering is not
+    checking, and the reviewer still has to say they looked."""
+    b = db.get(Business, bid)
+    if not b:
+        fail(404, "Business not found.")
+    value = data.gstin.strip().upper()
+    if not re.fullmatch(r"\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]", value):
+        fail(422, "That is not the shape of a GSTIN. Check the 15 characters.")
+    b.gstin = value
+    b.gst_status = "pending"
+    b.gst_reference = data.reference
+    db.commit()
+    return admin_business(db, b)
+
+
+@app.delete("/api/admin/gst/{bid}")
+def clear_gst(bid: str, user=Depends(admin), db=Depends(db_session)):
+    """Remove a GST record entirely. Used when a number was wrong or belonged
+    to someone else. The trust points it earned go with it, which is the
+    point: the score must never outlive the evidence under it."""
+    b = db.get(Business, bid)
+    if not b:
+        fail(404, "Business not found.")
+    if bid == user.id:
+        fail(403, "Reviewers cannot clear their own GST details.")
+    b.gstin = ""
+    b.gst_status = "not_provided"
+    b.gst_reference = ""
+    db.commit()
+    return admin_business(db, b)
+
+
+def admin_business(db, b):
+    """One business as a reviewer sees it: everything, including its email."""
+    counts = coverage(db, [b.id])[b.id]
+    return {
+        **public_business(b),
+        "email": b.email,
+        "role": b.role,
+        "kind": b.kind,
+        "gstin": b.gstin,
+        "gst_reference": b.gst_reference,
+        "listings": db.scalar(
+            select(func.count()).select_from(Listing).where(Listing.seller_id == b.id)
+        ),
+        "completed": counts["completed"],
+        "trust": trust(db, b, counts)["score"],
+    }
+
+
+@app.get("/api/admin/businesses")
+def all_businesses(
+    status: str = "", user=Depends(admin), db=Depends(db_session)
+):
+    """Every registered business, newest question first: the ones waiting on a
+    decision, then the rest. `status` narrows it to one GST state."""
+    allowed = {"pending", "reviewed", "rejected", "not_provided"}
+    if status and status not in allowed:
+        fail(422, "Unknown GST status.")
+    q = select(Business).order_by(Business.name)
+    if status:
+        q = q.where(Business.gst_status == status)
+    rows = db.scalars(q).all()
+    order = {"pending": 0, "rejected": 1, "reviewed": 2, "not_provided": 3}
+    rows.sort(key=lambda b: (order.get(b.gst_status, 9), b.name.lower()))
+    return [admin_business(db, b) for b in rows]
 
 
 class RequestItem(BaseModel):
@@ -1203,7 +1283,9 @@ def admin_overview(user=Depends(admin), db=Depends(db_session)):
         "businesses": [
             {
                 **public_business(b),
+                "email": b.email,
                 "role": b.role,
+                "kind": b.kind,
                 "gstin": b.gstin,
                 "gst_reference": b.gst_reference,
                 "listings": listings.get(b.id, 0),

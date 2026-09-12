@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, FormEvent } from "react";
+import React, { useState, useEffect, useRef, Fragment, FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Search,
@@ -99,7 +99,8 @@ function App() {
     [trust, setTrust] = useState<any>(null),
     [pending, setPending] = useState<any>({ gst: [], evidence: [] }),
     [disputes, setDisputes] = useState<any[]>([]),
-    [overview, setOverview] = useState<any>(null);
+    [overview, setOverview] = useState<any>(null),
+    [managing, setManaging] = useState<string | null>(null);
   const initialized = useRef(false),
     searchSeq = useRef(0),
     loadedFor = useRef<string | null | undefined>(undefined);
@@ -246,6 +247,23 @@ function App() {
     setTab((current) => home(result.user, current));
     setModal(null);
     setNotice("Signed in. Your business location is used for nearby matching.");
+  }
+  /** Every GST change a reviewer can make, and the reload that follows it. */
+  async function gstAction(bid: string, method: string, body?: any) {
+    await run(async () => {
+      await api(`/admin/gst/${bid}`, {
+        method,
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      const [queue, view] = await Promise.all([
+        api("/admin/evidence"),
+        api("/admin/overview"),
+      ]);
+      setPending(queue as any);
+      setOverview(view);
+      setManaging(null);
+      setNotice("GST record updated.");
+    });
   }
   async function showDetail(l: Listing) {
     setSelected(l);
@@ -1228,11 +1246,13 @@ function App() {
                           <th>Listings</th>
                           <th>Handovers</th>
                           <th>Trust</th>
+                          <th>Manage</th>
                         </tr>
                       </thead>
                       <tbody>
                         {overview.businesses.map((b: any) => (
-                          <tr key={b.id}>
+                          <Fragment key={b.id}>
+                          <tr>
                             <td>
                               <b>{b.name}</b>
                               {b.role === "admin" && (
@@ -1240,7 +1260,16 @@ function App() {
                               )}
                               {b.is_demo && <span className="role-tag demo">demo</span>}
                             </td>
-                            <td>{b.city}</td>
+                            <td>
+                              {b.city}
+                              <small>
+                                {b.kind === "supplier"
+                                  ? "generates surplus"
+                                  : b.kind === "buyer"
+                                    ? "collects material"
+                                    : "generates and collects"}
+                              </small>
+                            </td>
                             <td>
                               <span className={`gst ${b.gst_status}`}>
                                 {label(b.gst_status)}
@@ -1253,8 +1282,34 @@ function App() {
                             <td>{b.listings}</td>
                             <td>{b.completed}</td>
                             <td>{b.trust}/100</td>
+                            <td>
+                              {b.id === user.id ? (
+                                <small>you</small>
+                              ) : (
+                                <button
+                                  className="link-button"
+                                  onClick={() =>
+                                    setManaging(managing === b.id ? null : b.id)
+                                  }
+                                >
+                                  {managing === b.id ? "Close" : "GST"}
+                                </button>
+                              )}
+                            </td>
                           </tr>
-                        ))}
+                          {managing === b.id && (
+                            <tr className="manage-row">
+                              <td colSpan={7}>
+                                <GstManager
+                                  business={b}
+                                  busy={busy}
+                                  onAction={gstAction}
+                                />
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      ))}
                       </tbody>
                     </table>
                   </div>
@@ -1581,6 +1636,103 @@ function Title({ eyebrow, title, subtitle }: any) {
       <p className="eyebrow">{eyebrow}</p>
       <h1>{title}</h1>
       <p>{subtitle}</p>
+    </div>
+  );
+}
+/** The whole GST record for one business, and everything a reviewer may do
+ *  to it. Entering a number is not the same as checking one, so both carry the
+ *  same requirement: say what you looked at. */
+function GstManager({ business, busy, onAction }: any) {
+  const [note, setNote] = useState("");
+  const [gstin, setGstin] = useState(business.gstin || "");
+  const short = note.trim().length < 8;
+  const settled = business.gst_status === "reviewed";
+  return (
+    <div className="gst-manager">
+      <div>
+        <h4>{business.name}</h4>
+        <p className="muted">
+          {business.email} · {business.city} ·{" "}
+          {business.gstin ? (
+            <span className="mono">{business.gstin}</span>
+          ) : (
+            "no GST number on file"
+          )}
+        </p>
+        {business.gst_reference && (
+          <p className="muted">Last note: {business.gst_reference}</p>
+        )}
+      </div>
+      <Field label="What did you check it against?">
+        <input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Certificate checked against the GST register"
+        />
+      </Field>
+      <div className="gst-actions">
+        <button
+          className="primary"
+          disabled={busy || short || !business.gstin}
+          title={!business.gstin ? "No GST number to approve" : ""}
+          onClick={() =>
+            onAction(business.id, "POST", { approved: true, reference: note.trim() })
+          }
+        >
+          {settled ? "Re-approve" : "Approve"}
+        </button>
+        <button
+          className="outline"
+          disabled={busy || short || !business.gstin}
+          onClick={() =>
+            onAction(business.id, "POST", { approved: false, reference: note.trim() })
+          }
+        >
+          Reject
+        </button>
+        <button
+          className="outline danger"
+          disabled={busy || !business.gstin}
+          onClick={() => {
+            if (
+              confirm(
+                `Remove the GST record for ${business.name}? Their trust score ` +
+                  `loses the points it earned.`,
+              )
+            )
+              onAction(business.id, "DELETE");
+          }}
+        >
+          Clear record
+        </button>
+      </div>
+      <details className="gst-edit">
+        <summary>Enter or correct the GST number</summary>
+        <p className="muted">
+          For a number given over the phone, or a typo. It goes back to awaiting
+          review: entering it is not checking it.
+        </p>
+        <Field label="GSTIN">
+          <input
+            value={gstin}
+            maxLength={15}
+            onChange={(e) => setGstin(e.target.value.toUpperCase())}
+            placeholder="15-character GSTIN"
+          />
+        </Field>
+        <button
+          className="outline"
+          disabled={busy || short || gstin.trim().length !== 15}
+          onClick={() =>
+            onAction(business.id, "PUT", {
+              gstin: gstin.trim(),
+              reference: note.trim(),
+            })
+          }
+        >
+          Save number
+        </button>
+      </details>
     </div>
   );
 }

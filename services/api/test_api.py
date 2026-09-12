@@ -432,3 +432,59 @@ def test_an_account_chooses_what_it_came_here_to_do(client):
 
     # Nothing outside the three is accepted.
     assert client.post("/api/me/kind", headers=head, json={"kind": "admin"}).status_code == 422
+
+
+def test_a_reviewer_can_manage_a_gst_record_end_to_end(client):
+    """Create, read, update and remove - all of it leaving a written reason."""
+    head = auth(client, "admin")
+    note = "Certificate checked against the register"
+
+    # Read: every business, and the same list narrowed to one state.
+    rows = client.get("/api/admin/businesses", headers=head)
+    assert rows.status_code == 200, rows.text
+    assert {"gstin", "gst_status", "gst_reference", "email"} <= rows.json()[0].keys()
+    assert client.get("/api/admin/businesses?status=nonsense", headers=head).status_code == 422
+
+    # Create: a reviewer enters a number on a business's behalf. Entering is not
+    # checking, so it lands as pending, never as approved.
+    r = client.put(
+        "/api/admin/gst/s4", headers=head, json={"gstin": "24ABCDE1234F1Z5", "reference": note}
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["gst_status"] == "pending"
+    assert r.json()["gstin"] == "24ABCDE1234F1Z5"
+    assert (
+        client.put(
+            "/api/admin/gst/s4", headers=head, json={"gstin": "NOT-A-GSTIN-XX", "reference": note}
+        ).status_code
+        == 422
+    )
+
+    # Update: approve, then revisit the decision. A registration can lapse.
+    r = client.post("/api/admin/gst/s4", headers=head, json={"approved": True, "reference": note})
+    assert r.status_code == 200 and r.json()["gst_status"] == "reviewed"
+    r = client.post("/api/admin/gst/s4", headers=head, json={"approved": False, "reference": note})
+    assert r.status_code == 200 and r.json()["gst_status"] == "rejected"
+
+    # A decision always carries a reason; a blank one is refused.
+    assert (
+        client.post("/api/admin/gst/s4", headers=head, json={"approved": True, "reference": ""}).status_code
+        == 422
+    )
+
+    # Delete: the record goes, and so do the points that rested on it.
+    before = client.get("/api/businesses/s4/trust").json()["score"]
+    client.post("/api/admin/gst/s4", headers=head, json={"approved": True, "reference": note})
+    approved = client.get("/api/businesses/s4/trust").json()["score"]
+    assert approved > before
+    r = client.delete("/api/admin/gst/s4", headers=head)
+    assert r.status_code == 200, r.text
+    assert r.json()["gst_status"] == "not_provided" and r.json()["gstin"] == ""
+    assert client.get("/api/businesses/s4/trust").json()["score"] == before
+
+    # Nothing here is reachable without reviewer access, and no reviewer may
+    # decide their own.
+    member = auth(client, "s1")
+    assert client.get("/api/admin/businesses", headers=member).status_code == 403
+    assert client.delete("/api/admin/gst/s2", headers=member).status_code == 403
+    assert client.delete("/api/admin/gst/admin", headers=head).status_code == 403

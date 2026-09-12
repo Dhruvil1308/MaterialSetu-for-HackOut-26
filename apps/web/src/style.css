@@ -2131,3 +2131,61 @@ footer span {
     display: none;
   }
 }
+
+/* ---- managing one business's GST record -------------------------------- */
+.manage-row > td {
+  background: var(--pine-wash);
+  padding: 0;
+}
+.gst-manager {
+  display: grid;
+  gap: 12px;
+  padding: 16px 18px 18px;
+  border-left: 3px solid var(--pine);
+}
+.gst-manager h4 {
+  margin: 0 0 3px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pine);
+}
+.gst-manager .muted {
+  margin: 0;
+  font-size: 12px;
+}
+.gst-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gst-actions button {
+  min-width: 120px;
+}
+button.danger {
+  border-color: #b23a2e;
+  color: #b23a2e;
+}
+button.danger:hover:not(:disabled) {
+  background: #fdf1ef;
+}
+.gst-edit summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pine);
+  padding: 4px 0;
+}
+.gst-edit[open] summary {
+  margin-bottom: 6px;
+}
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pine);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
