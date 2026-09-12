@@ -394,14 +394,30 @@ def test_an_account_chooses_what_it_came_here_to_do(client):
     assert r.json()["user"]["kind"] == "buyer"
     head = {"Authorization": "Bearer " + r.json()["token"]}
 
-    # A buyer-only account is told why it cannot list, not handed a 500.
+    # A collect-only account is told why it cannot list, not handed a 500.
     r = client.post(
         "/api/listings",
         headers=head,
         json={"title": "Spare film", "material_id": "ldpe", "quantity": 5, "price": 10},
     )
     assert r.status_code == 403, r.text
-    assert "buy" in r.json()["detail"]
+    assert "collect" in r.json()["detail"]
+
+    # ...and the mirror image: a generator cannot send collection requests.
+    lid = listing(client)
+    r = client.post("/api/me/kind", headers=head, json={"kind": "supplier"})
+    assert r.status_code == 200, r.text
+    r = client.post(
+        "/api/exchanges",
+        headers=head,
+        json={
+            "items": [{"listing_id": lid, "quantity": 1}],
+            "pickup": "Our truck, Friday",
+            "idempotency_key": uuid.uuid4().hex,
+        },
+    )
+    assert r.status_code == 403, r.text
+    assert "supply" in r.json()["detail"]
 
     # Businesses that end up with surplus of their own can say so.
     r = client.post("/api/me/kind", headers=head, json={"kind": "both"})

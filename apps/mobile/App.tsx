@@ -74,11 +74,22 @@ const initial: SearchResult = {
   parsed: { method: "rules", material_ids: [] },
   pool_note: "",
 };
-type Tab = "discover" | "pools" | "exchanges" | "supply" | "account";
+type Tab = "discover" | "pools" | "exchanges" | "supply" | "review" | "account";
+/** What a reviewer still has to look at. */
+type Queue = {
+  gst: { id: string; name: string; gstin: string; status: string }[];
+  evidence: {
+    id: string;
+    business: string;
+    business_id: string;
+    kind: string;
+    status: string;
+  }[];
+};
 const KINDS = [
-  { id: "buyer", icon: "⌕", title: "I need material", blurb: "Search nearby surplus." },
-  { id: "supplier", icon: "+", title: "I have surplus", blurb: "List what you spare." },
-  { id: "both", icon: "⇄", title: "Both", blurb: "Buy and sell." },
+  { id: "supplier", icon: "+", title: "We generate surplus", blurb: "List it" },
+  { id: "buyer", icon: "⌕", title: "We collect material", blurb: "Find it" },
+  { id: "both", icon: "⇄", title: "Both", blurb: "Either way" },
 ];
 export default function App() {
   return (
@@ -103,6 +114,8 @@ function MaterialSetu() {
     [all, setAll] = useState<Listing[]>([]),
     [exchanges, setExchanges] = useState<Exchange[]>([]),
     [ownTrust, setOwnTrust] = useState<Trust | null>(null),
+    [queue, setQueue] = useState<Queue>({ gst: [], evidence: [] }),
+    [notes, setNotes] = useState<Record<string, string>>({}),
     [query, setQuery] = useState("50 kg plastic"),
     [radius, setRadius] = useState("30"),
     [transport, setTransport] = useState(""),
@@ -154,16 +167,30 @@ function MaterialSetu() {
   }
   async function refresh(currentUser = user) {
     // One wave: none of these depend on each other's answers.
-    const [all, exchanges, trust] = await Promise.all([
+    const reviewer = currentUser?.role === "admin";
+    const [all, exchanges, trust, queue] = await Promise.all([
       api<Listing[]>("/listings"),
       currentUser ? api<Exchange[]>("/exchanges") : Promise.resolve([]),
       currentUser
         ? api<Trust>(`/businesses/${currentUser.id}/trust`)
         : Promise.resolve(null),
+      reviewer ? api<Queue>("/admin/evidence") : Promise.resolve(null),
     ]);
     setAll(all);
     setExchanges(exchanges);
     setOwnTrust(trust);
+    if (queue) setQueue(queue);
+  }
+  /** A reviewer's verdict. The note is required: it is what the score rests on. */
+  async function decide(path: string, approved: boolean, reference: string) {
+    await run(async () => {
+      await api(path, {
+        method: "POST",
+        body: JSON.stringify({ approved, reference: reference.trim() }),
+      });
+      await refresh();
+      setMessage(approved ? "Approved, with your note." : "Rejected.");
+    });
   }
   async function signedIn(r: any) {
     setExchanges([]);
@@ -172,7 +199,13 @@ function MaterialSetu() {
     setUser(r.user);
     setGst(r.user.gstin);
     setSheet(null);
-    setTab(r.user.kind === "supplier" ? "supply" : "discover");
+    setTab(
+      r.user.role === "admin"
+        ? "review"
+        : r.user.kind === "supplier"
+          ? "supply"
+          : "discover",
+    );
     await refresh(r.user);
     await find(r.user);
     setMessage("Signed in. Searches use your business location.");
@@ -398,12 +431,14 @@ function MaterialSetu() {
       </SafeAreaView>
     );
   const kind = user?.kind ?? "buyer";
+  const reviewer = user?.role === "admin";
   const buys = !user || kind === "buyer" || kind === "both";
   const sells = !!user && (kind === "supplier" || kind === "both");
   // A tab this account cannot use falls back rather than rendering empty.
   const hidden =
     (!buys && (tab === "discover" || tab === "pools")) ||
-    (!sells && tab === "supply");
+    (!sells && tab === "supply") ||
+    (!reviewer && tab === "review");
   const view: Tab = hidden ? (buys ? "discover" : "exchanges") : tab;
   return (
     <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
@@ -419,7 +454,7 @@ function MaterialSetu() {
           <Text style={s.small}>
             {user
               ? user.role === "admin"
-                ? "Reviewer · use the website to review"
+                ? "Reviewer · approves GST and documents"
                 : `${user.city} · ${
                     user.kind === "buyer"
                       ? "buying"
@@ -765,6 +800,79 @@ function MaterialSetu() {
             )}
           </>
         )}
+        {view === "review" && user?.role === "admin" && (
+          <>
+            <Heading
+              eyebrow="EVIDENCE, CHECKED BY A PERSON"
+              title="Review centre."
+            />
+            <Text style={s.body}>
+              Approving is a statement that you looked. Write what you checked
+              against; it is shown beside the score you grant.
+            </Text>
+            {!queue.gst.length && !queue.evidence.length && (
+              <View style={s.card}>
+                <Text style={s.cardTitle}>Nothing waiting</Text>
+                <Text style={s.body}>
+                  GST numbers and documents appear here as businesses submit
+                  them.
+                </Text>
+              </View>
+            )}
+            {queue.gst.map((g) => (
+              <View key={g.id} style={s.card}>
+                <Text style={s.cardTitle}>{g.name}</Text>
+                <Text style={s.body}>GSTIN {g.gstin}</Text>
+                <Input
+                  label="What did you check it against?"
+                  value={notes[g.id] || ""}
+                  onChangeText={(t: string) =>
+                    setNotes((n) => ({ ...n, [g.id]: t }))
+                  }
+                />
+                <Button
+                  title="Approve"
+                  disabled={busy || (notes[g.id] || "").trim().length < 8}
+                  onPress={() => decide(`/admin/gst/${g.id}`, true, notes[g.id])}
+                />
+                <Button
+                  title="Reject"
+                  outline
+                  disabled={busy || (notes[g.id] || "").trim().length < 8}
+                  onPress={() => decide(`/admin/gst/${g.id}`, false, notes[g.id])}
+                />
+              </View>
+            ))}
+            {queue.evidence.map((e) => (
+              <View key={e.id} style={s.card}>
+                <Text style={s.cardTitle}>{e.business}</Text>
+                <Text style={s.body}>{label(e.kind)}</Text>
+                <Input
+                  label="What did you check it against?"
+                  value={notes[e.id] || ""}
+                  onChangeText={(t: string) =>
+                    setNotes((n) => ({ ...n, [e.id]: t }))
+                  }
+                />
+                <Button
+                  title="Approve"
+                  disabled={busy || (notes[e.id] || "").trim().length < 8}
+                  onPress={() =>
+                    decide(`/admin/evidence/${e.id}`, true, notes[e.id])
+                  }
+                />
+                <Button
+                  title="Reject"
+                  outline
+                  disabled={busy || (notes[e.id] || "").trim().length < 8}
+                  onPress={() =>
+                    decide(`/admin/evidence/${e.id}`, false, notes[e.id])
+                  }
+                />
+              </View>
+            ))}
+          </>
+        )}
         {view === "account" && (
           <>
             <Heading
@@ -893,6 +1001,9 @@ function MaterialSetu() {
               : []),
             ["exchanges", "⇄", sells && !buys ? "Requests" : "Exchanges"],
             ...(sells ? ([["supply", "+", "Supply"]] as [Tab, string, string][]) : []),
+            ...(reviewer
+              ? ([["review", "✓", "Review"]] as [Tab, string, string][])
+              : []),
             ["account", "◎", "Account"],
           ] as [Tab, string, string][]
         ).map(([id, icon, title]) => (

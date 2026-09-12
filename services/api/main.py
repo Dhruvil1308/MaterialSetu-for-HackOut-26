@@ -582,7 +582,11 @@ class NewListing(BaseModel):
 @app.post("/api/listings")
 def add_listing(data: NewListing, user=Depends(current), db=Depends(db_session)):
     if user.kind == "buyer":
-        fail(403, "This account is set up to buy. Add supplying from your account page.")
+        fail(
+            403,
+            "This account is set up to collect material. "
+            "Add generating from your account page to list surplus.",
+        )
     m = material(data.material_id)
     if not m:
         fail(422, "Choose a supported material.")
@@ -880,6 +884,12 @@ class NewExchange(BaseModel):
 
 @app.post("/api/exchanges")
 def request_exchange(data: NewExchange, user=Depends(current), db=Depends(db_session)):
+    if user.kind == "supplier":
+        fail(
+            403,
+            "This account is set up to supply material. "
+            "Add collecting from your account page to send requests.",
+        )
     if len(set(i.listing_id for i in data.items)) != len(data.items):
         fail(422, "A listing can only appear once in a request.")
     existing = db.scalar(

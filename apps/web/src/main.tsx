@@ -1790,22 +1790,22 @@ function Modal({ title, children, onClose }: any) {
 }
 const KINDS = [
   {
-    id: "buyer",
-    icon: Search,
-    title: "I need material",
-    blurb: "Search nearby surplus and combine it into one order.",
-  },
-  {
     id: "supplier",
     icon: Package,
-    title: "I have surplus",
-    blurb: "List what you have spare and build a trusted record.",
+    title: "We generate surplus",
+    blurb: "List the packaging material your work leaves behind.",
+  },
+  {
+    id: "buyer",
+    icon: Search,
+    title: "We collect material",
+    blurb: "Find surplus nearby and combine it into one collection.",
   },
   {
     id: "both",
     icon: ArrowLeftRight,
     title: "Both",
-    blurb: "Buy what you need and sell what you do not.",
+    blurb: "We generate surplus and collect what we need.",
   },
 ];
 function LoginForm({ submit, busy }: any) {
