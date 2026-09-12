@@ -2,9 +2,11 @@
 
 Release 0.1.0 · Checked 12 September 2026
 
+## Automated checks
+
 | Check | Result | Scope |
 | --- | --- | --- |
-| API tests | **15 passed** | Search, budgets, compatible pooling, supplier pair distance, authentication, document access, reviewer permissions, idempotency, reservation cancellation, concurrent acceptance, positive / partial handover and buyer review eligibility |
+| API tests | **17 passed** | Search, budgets, compatible pooling, supplier pair distance, authentication, document access, reviewer permissions, idempotency, reservation cancellation, concurrent acceptance, positive / partial handover, buyer review eligibility, and the model adapter's fallback and output validation |
 | Website build | **Passed** | TypeScript and Vite production bundle |
 | Mobile TypeScript | **Passed** | React Native application and shared API client |
 | Expo exports | **Passed** | Android, iOS and web JavaScript / Hermes bundles |
@@ -12,12 +14,38 @@ Release 0.1.0 · Checked 12 September 2026
 | Mobile web smoke | **Passed** | Discovery, supply plans and login sheet through the exported React Native web target |
 | Visual review | **Checked** | Desktop marketplace, evidence/trust dialog, responsive website and mobile web discovery |
 
-The browser integration recorded no JavaScript page errors. API tests emitted dependency deprecation warnings around Starlette's httpx TestClient integration; no tests failed. The environment's standard Playwright browser download timed out, so the smoke test used a Chromium executable supplied through its `CHROMIUM_EXECUTABLE` override. The packaged script defaults to normal Playwright Chromium for your machine.
+The browser integration recorded no JavaScript page errors. API tests emit dependency deprecation warnings around Starlette's httpx TestClient integration; no tests fail. The test module clears `OPENAI_API_KEY`, so the suite describes behaviour with no model configured whatever the shell holds.
+
+## Builds produced
+
+| Artefact | Result | Notes |
+| --- | --- | --- |
+| Android APK | **Built** | EAS `preview` profile, installable by direct download. Signed by EAS; not a Play Store release |
+| iOS simulator build | **Built** | EAS `ios-simulator` profile, four and a half minutes. Confirms the native iOS build compiles |
+| iOS device build | **Not executed** | Requires a paid Apple Developer account and signing credentials |
+
+## Deployment checked against the running services
+
+| Check | Result |
+| --- | --- |
+| Website on Vercel | **Live**, HTTP 200 |
+| API on Render (Singapore) | **Live**, health endpoint 200 |
+| PostgreSQL on Supabase | **Connected**, 7 application tables in a private `app` schema |
+| Schema isolation | **Verified** — the project's publishable key is refused: `Invalid schema: app`, and `anon` has no `USAGE` on the schema |
+| Demo account passwords | **Verified unusable** — the seeded password no longer authenticates |
+| Multilingual demand extraction | **Verified live** in Hindi and Gujarati, and on everyday English wording |
+| Photo category suggestion | **Verified live** — a pallet photograph returns wooden pallets at high confidence; a photograph of a document correctly returns no match |
+
+Search against the deployed stack answers in roughly 0.9 s. The API is in Singapore and the database in Tokyo, so most of that is the distance between them rather than query cost: a single round trip to the database measures about 137 ms, and one search issues a fixed 8 statements.
+
+## Limits
 
 Screenshots in `docs/screenshots` are taken from the running application using fictional demo records. `native-web-*` images are the React Native **web rendering**, not screenshots from an iOS or Android device.
 
-Not executed: a signed Android APK/AAB build, Xcode/iOS native compilation, physical device camera / secure-store verification, a live PostgreSQL deployment, GST provider integration, AI model integration, payments, or external logistics. These are not represented as completed.
+Not executed: an App Store or Play Store submission, physical device camera / secure-store verification, GST provider integration, payments, or external logistics. These are not represented as completed.
+
+Known gaps in the deployment rather than the code: uploaded evidence is written to the API host's local disk, which is not persistent, so files uploaded by a real user are lost on restart; the model adapter has no per-account quota, though both of its routes require a signed-in account; and there is no rate limit on sign-in.
 
 ## Reproduce
 
-Use the commands in the README. Backend tests create an isolated temporary SQLite database and files. The browser smoke script also starts its own temporary backend; stop an existing development server on ports 8000 / 5173 / 8081 before running it. Its checks deliberately exercise a request through supplier acceptance; final handover, review eligibility and dispute reconciliation are covered in API tests.
+Use the commands in the README. Backend tests create an isolated temporary SQLite database and files. The browser smoke script also starts its own temporary backend; stop an existing development server on ports 8000 / 5173 / 8081 before running it, and run `npx expo export` in `apps/mobile` first if you want its mobile-web half to run rather than be skipped. Its checks deliberately exercise a request through supplier acceptance; final handover, review eligibility and dispute reconciliation are covered in API tests.
