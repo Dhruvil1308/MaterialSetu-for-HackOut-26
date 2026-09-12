@@ -16,6 +16,22 @@ Release 0.1.0 · Checked 12 September 2026
 
 The browser integration recorded no JavaScript page errors. API tests emit dependency deprecation warnings around Starlette's httpx TestClient integration; no tests fail. The test module clears `OPENAI_API_KEY`, so the suite describes behaviour with no model configured whatever the shell holds.
 
+## Acceptance tests
+
+`python scripts/uat.py` walks the API as a buyer, a supplier and a reviewer would,
+and states each expectation as a promise to a user rather than an assertion about
+code. **96 of 96 kept** against a throwaway local database with the model enabled,
+covering: signing in and the impossibility of self-promotion to reviewer; demand
+search, parsing, filters and budgets; publishing material and its validation; the
+full exchange lifecycle including idempotency, reservation, partial handover and
+cancellation; disputes through to a reviewer's settlement; review eligibility;
+evidence upload and who may read it; GST review earning points only after a person
+approves it; upload size and type limits; and multilingual search.
+
+`python scripts/uat.py --url <deployment> --read-only` skips everything that
+writes, so it is safe to point at production. **32 of 32 kept** against the live
+deployment.
+
 ## Builds produced
 
 | Artefact | Result | Notes |

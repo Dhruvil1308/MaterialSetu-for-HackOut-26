@@ -306,6 +306,7 @@ The API address is already pinned in `eas.json`, so the APK works on any phone w
 <summary><b>Check everything still works</b></summary>
 
 ```bash
+python scripts/uat.py                        # 96 acceptance checks, plain English
 cd services/api && python -m pytest -q      # 17 API tests
 npm run build                               # website type check and build
 cd apps/mobile && npm run typecheck         # mobile type check
