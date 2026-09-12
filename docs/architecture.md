@@ -86,7 +86,11 @@ Listings may have weight quantities with up to practical kilogram precision; pal
 
 The working baseline recognizes material aliases, quantity with units and an optional `within N km` phrase. Generic “plastic” searches PET, HDPE, LDPE and PP as separate compatible groups. Potential-use descriptions help discovery. Unknown phrases request clarification rather than fabricating a category. The listing form can suggest categories from a description, which the seller confirms.
 
-**No live AI model is connected.** A future provider adapter belongs on the API side, before matching. It should return a validated object containing taxonomy material IDs, quantity, unit, intended use and a clarification flag. Never let model output change trust scores, verify a GSTIN or reserve inventory. For images, suggest candidate categories with uncertainty and require confirmation of resin and contamination. Retain manual classification if the model is unavailable.
+**An optional model adapter is connected** in `services/api/ai.py`, enabled by `OPENAI_API_KEY`. It sits on the API side, before matching, and follows the constraints this document set for it.
+
+The keyword rules run first and answer every ordinary search on their own, so the usual path costs nothing and stays instant. Only a phrase the rules cannot read — another language, an unusual wording — reaches the model, and only for a signed-in member. A seller can also photograph material for suggested categories.
+
+Every reply is validated back to the taxonomy before use: unknown material IDs are dropped, quantities outside the accepted range are discarded, and pallets must still be whole pieces. The model never changes a trust score, verifies a GSTIN or reserves inventory, and the category published on a listing is the one the seller selects. For photographs it returns candidates with a confidence level and names what the seller must confirm, because a photograph cannot identify a polymer. If the key is absent, the request fails or the provider is slow, every caller falls back to the keyword rules and the application behaves exactly as it did before.
 
 ## Data and access
 

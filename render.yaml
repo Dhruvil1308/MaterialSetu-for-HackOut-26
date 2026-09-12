@@ -51,6 +51,14 @@ services:
       - key: DEMO_MODE
         value: "1"
 
+      # Optional. Enables multilingual search and photo category suggestions;
+      # without it the API falls back to keyword rules. Server-side only - it must
+      # never be handed to the website or the mobile app.
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+
       # The free plan has no persistent disk, so uploaded photos, weighing slips
       # and GST documents are lost on every restart and redeploy. The seeded demo
       # evidence is regenerated automatically; real uploads are not. Move these to

@@ -1928,3 +1928,17 @@ footer span:last-child {
     animation: none;
   }
 }
+
+/* A model suggestion is advice, not a verdict: keep it visually quieter than
+   the field the seller actually commits to. */
+.suggestion {
+  background: #f3f6f3;
+  border: 1px solid var(--line);
+  border-left: 3px solid #8aa894;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #47584e;
+  margin: 10px 0 0;
+}

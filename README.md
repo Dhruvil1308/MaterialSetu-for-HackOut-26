@@ -18,8 +18,9 @@ This repository includes a working React website, an Expo React Native applicati
 - Supplier acceptance reserves stock; cancellation releases it; both parties confirm the same actual handed-over quantity. Completed buyers can submit one review per exchange item.
 - Web dispute review and stock reconciliation.
 - Camera and image-library photo attachment on mobile, document attachment and native secure token storage.
+- Optional model assistance: a search phrase the keyword rules cannot read — another language, an unusual wording — is passed to a server-side model, and a seller can photograph material to get suggested categories. Both only ever suggest; the seller confirms the category that is published.
 
-**Honest boundaries:** GST verification is manual review, not a live GST registry API. Classification and query extraction use transparent keyword rules, not a connected AI model. Transport is an estimate, not a live road route or booking. Demo evidence, businesses and reviews are fictional and labelled. No payments, delivery tracking or carbon-credit claims are implemented.
+**Honest boundaries:** GST verification is manual review, not a live GST registry API. Classification and query extraction use transparent keyword rules; a model is consulted only for phrases the rules cannot read and for photo category suggestions, and its output is validated against the material list and confirmed by a person. It never touches trust scores, GST status or inventory. Transport is an estimate, not a live road route or booking. Demo evidence, businesses and reviews are fictional and labelled. No payments, delivery tracking or carbon-credit claims are implemented.
 
 ## Run the website and API
 
@@ -132,7 +133,7 @@ See [docs/architecture.md](docs/architecture.md) for the scoring formula, state 
 2. A deployed PostgreSQL database, durable private document storage, HTTPS, backups and database migrations.
 3. Account recovery, email verification, abuse throttling, operational monitoring and production authentication review. Web tokens currently use local storage; native tokens use SecureStore.
 4. A geocoder / address picker and real transport quotes. Current business coordinates are entered during registration; distances are straight-line estimates.
-5. If desired, a server-side AI model for multilingual demand extraction and image-assisted category suggestions. Validate output against the taxonomy and require seller confirmation; keep trust and inventory decisions deterministic.
+5. A budget and rate limit for the model adapter if `OPENAI_API_KEY` is set. Both model paths already require a signed-in account, and ordinary English searches never reach the model, but there is no per-account quota yet.
 6. Real-device camera, upload and notification testing, accessibility review, and platform signing / store release work. Push notifications, chat, payments and automatic reservation expiry are future work.
 
 For a clean pilot, use a **new database** with `DEMO_MODE=0`; changing the flag does not delete previously seeded records. Register a reviewer normally, then an operator can run `python create_reviewer.py reviewer@example.com` from `services/api`. Users cannot assign themselves that role through registration.

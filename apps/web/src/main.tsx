@@ -1103,6 +1103,9 @@ function App() {
                   body: JSON.stringify({ text }),
                 })
               }
+              onClassifyImage={(body: FormData) =>
+                api("/classify/image", { method: "POST", body })
+              }
               onSubmit={(body: unknown) =>
                 run(async () => {
                   const l = await api<Listing>("/listings", {
@@ -1636,10 +1639,45 @@ function LoginForm({ submit, busy }: any) {
     </form>
   );
 }
-function CreateForm({ taxonomy, busy, onSubmit, onClassify }: any) {
+function CreateForm({
+  taxonomy,
+  busy,
+  onSubmit,
+  onClassify,
+  onClassifyImage,
+}: any) {
   const [text, setText] = useState(""),
     [mid, setMid] = useState("pet"),
-    [suggestion, setSuggestion] = useState("");
+    [suggestion, setSuggestion] = useState(""),
+    [looking, setLooking] = useState(false);
+  async function fromPhoto(file: File) {
+    setLooking(true);
+    setSuggestion("Looking at the photograph…");
+    try {
+      const body = new FormData();
+      body.set("file", file);
+      const r = await onClassifyImage(body);
+      if (!r.suggestions.length) {
+        setSuggestion(
+          `${r.observed} No catalogue category recognised — choose one below.`,
+        );
+        return;
+      }
+      setMid(r.suggestions[0].id);
+      setSuggestion(
+        `${r.observed} Suggested: ${r.suggestions
+          .map((x: any) => x.name)
+          .join(", ")} (${r.confidence} confidence). ${r.check}`,
+      );
+    } catch (e) {
+      setSuggestion(
+        (e as Error).message ||
+          "Photo suggestions are unavailable. Choose a category manually.",
+      );
+    } finally {
+      setLooking(false);
+    }
+  }
   return (
     <form
       onSubmit={(e) => {
@@ -1681,12 +1719,29 @@ function CreateForm({ taxonomy, busy, onSubmit, onClassify }: any) {
         }}
       >
         <Layers3 size={16} />
-        Suggest category
+        Suggest from description
       </button>
-      {suggestion && <p role="status">{suggestion}</p>}
+      <Field label="Or photograph the material">
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          disabled={looking}
+          onChange={(e) => {
+            const file = e.currentTarget.files?.[0];
+            e.currentTarget.value = "";
+            if (file) fromPhoto(file);
+          }}
+        />
+      </Field>
+      {suggestion && (
+        <p role="status" className="suggestion">
+          {suggestion}
+        </p>
+      )}
       <p className="micro">
-        Uses keyword rules in this build. It does not identify resin from
-        photos.
+        Suggestions only. A photograph cannot identify a polymer — confirm the
+        resin, previous contents and condition yourself. The category you
+        publish is the one selected below.
       </p>
       <Field label="Listing title">
         <input name="title" required minLength={4} maxLength={140} />

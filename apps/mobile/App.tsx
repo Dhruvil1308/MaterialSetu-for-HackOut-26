@@ -299,6 +299,32 @@ function MaterialSetu() {
       setMessage("Evidence uploaded. Points are added only after review.");
     });
   }
+  async function suggestFromPhoto(camera: boolean) {
+    if (camera) {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted)
+        throw new Error("Camera permission is needed to photograph material.");
+    }
+    const picked = camera
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.6 })
+      : await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["images"],
+          quality: 0.6,
+        });
+    if (picked.canceled) return null;
+    const a = picked.assets[0];
+    const form = new FormData();
+    if (Platform.OS === "web") {
+      form.append("file", await (await fetch(a.uri)).blob(), a.fileName || "material.jpg");
+    } else {
+      form.append("file", {
+        uri: a.uri,
+        name: a.fileName || "material.jpg",
+        type: a.mimeType || "image/jpeg",
+      } as any);
+    }
+    return api("/classify/image", { method: "POST", body: form });
+  }
   const mine = all.filter((l) => l.seller_id === user?.id);
   if (!ready)
     return (
@@ -855,6 +881,7 @@ function MaterialSetu() {
                       body: JSON.stringify({ text }),
                     })
                   }
+                  onSuggestFromPhoto={suggestFromPhoto}
                   onSubmit={(body) =>
                     run(async () => {
                       const l = await api<Listing>("/listings", {
@@ -1369,11 +1396,13 @@ function CreateForm({
   busy,
   onSubmit,
   onSuggest,
+  onSuggestFromPhoto,
 }: {
   materials: Material[];
   busy: boolean;
   onSubmit: (b: any) => void;
   onSuggest: (t: string) => Promise<any>;
+  onSuggestFromPhoto: (camera: boolean) => Promise<any>;
 }) {
   const [description, setDescription] = useState(""),
     [title, setTitle] = useState(""),
@@ -1409,8 +1438,36 @@ function CreateForm({
           }
         }}
       />
+      <Button
+        title="Photograph the material"
+        outline
+        onPress={async () => {
+          setHint("Looking at the photograph…");
+          try {
+            const r = await onSuggestFromPhoto(true);
+            if (!r) return setHint("");
+            if (!r.suggestions.length)
+              return setHint(
+                `${r.observed} No catalogue category recognised — choose one below.`,
+              );
+            setMid(r.suggestions[0].id);
+            setHint(
+              `${r.observed} Suggested: ${r.suggestions
+                .map((m: Material) => m.name)
+                .join(", ")} (${r.confidence} confidence). ${r.check}`,
+            );
+          } catch (e) {
+            setHint(
+              e instanceof Error
+                ? e.message
+                : "Photo suggestions are unavailable. Choose a category manually.",
+            );
+          }
+        }}
+      />
       <Text style={s.small}>
-        {hint || "Keyword-based classification. No image model is connected."}
+        {hint ||
+          "Suggestions only. A photograph cannot identify a polymer — confirm the resin and condition yourself."}
       </Text>
       <Input label="Listing title" value={title} onChangeText={setTitle} />
       <Text style={s.inputLabel}>Confirmed material</Text>

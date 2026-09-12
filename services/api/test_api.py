@@ -7,6 +7,8 @@ os.environ.update(
     UPLOAD_DIR=str(Path(TMP.name) / "uploads"),
     DEMO_MODE="1",
 )
+# The suite describes behaviour with no model configured, whatever the shell holds.
+os.environ.pop("OPENAI_API_KEY", None)
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
@@ -335,3 +337,39 @@ def test_supplier_pair_distance_constraint(client):
         },
     ]
     assert pool_options(rows, 50, (0, 0), 30, 12, 40, None, None) == []
+
+
+def test_classification_without_a_model_configured(client):
+    """With no key the keyword rules answer, and the photo route says so plainly."""
+    assert client.get("/api/health").json()["classification"] == "rules"
+    assert client.post("/api/classify", json={"text": "stretch wrap"}).status_code == 401
+    r = client.post(
+        "/api/classify", headers=auth(client, "s1"), json={"text": "stretch wrap"}
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["method"] == "rules"
+    assert [s["id"] for s in r.json()["suggestions"]] == ["ldpe"]
+    assert r.json()["needs_confirmation"] is True
+
+    buf = io.BytesIO()
+    Image.new("RGB", (20, 20)).save(buf, format="JPEG")
+    files = {"file": ("m.jpg", buf.getvalue(), "image/jpeg")}
+    assert client.post("/api/evidence", files=files, data={"kind": "photo"}).status_code == 401
+    r = client.post("/api/classify/image", headers=auth(client, "s1"), files=files)
+    assert r.status_code == 503
+    assert "not configured" in r.json()["detail"]
+
+
+def test_model_output_is_validated_against_the_taxonomy(client):
+    """A provider answer is never trusted as given."""
+    import ai
+
+    assert ai._clean_ids(["pet", "unobtainium", "PET", 7, None]) == ["pet"]
+    assert ai._clean_ids("pet") == []
+    assert ai._clean_ids(["pallet", "pet"]) == ["pet", "pallet"]  # taxonomy order
+    assert ai._clean_number(-5, "kg") is None
+    assert ai._clean_number(0, "kg") is None
+    assert ai._clean_number(2_000_000, "kg") is None
+    assert ai._clean_number(1.5, "piece") is None       # pallets are whole
+    assert ai._clean_number(True, "kg") is None          # bools are not quantities
+    assert ai._clean_number(12.3456, "kg") == 12.346

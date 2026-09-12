@@ -24,6 +24,7 @@ from models import (
     Review,
 )
 from domain import TAXONOMY, material, parse_query, haversine, pool_options
+import ai
 
 DEMO = os.getenv("DEMO_MODE", "0") == "1"
 UPLOADS = Path(os.getenv("UPLOAD_DIR", "./uploads"))
@@ -337,7 +338,7 @@ def health():
     return {
         "status": "ok",
         "demo": DEMO,
-        "classification": "rules",
+        "classification": "model" if ai.enabled() else "rules",
         "gst_verification": "manual_review",
         "pooling": "local_route_estimate",
     }
@@ -457,7 +458,14 @@ def search(
     db=Depends(db_session),
     auth: HTTPAuthorizationCredentials | None = Depends(security),
 ):
-    parsed = parse_query(data.query)
+    buyer = None
+    if auth:
+        login = db.get(
+            LoginSession, hashlib.sha256(auth.credentials.encode()).hexdigest()
+        )
+        if login and login.expires > time.time():
+            buyer = login.business_id
+    parsed = ai.parse_demand(data.query) if buyer else parse_query(data.query)
     mids = [data.material_id] if data.material_id else parsed["material_ids"]
     if data.query.strip() and not mids:
         return {
@@ -487,13 +495,6 @@ def search(
         fail(422, "Radius must be greater than zero.")
     origin = (data.latitude, data.longitude)
     candidates = []
-    buyer = None
-    if auth:
-        login = db.get(
-            LoginSession, hashlib.sha256(auth.credentials.encode()).hexdigest()
-        )
-        if login and login.expires > time.time():
-            buyer = login.business_id
     open_listings = db.scalars(select(Listing).where(Listing.available > 0)).all()
     sellers = {
         b.id: b
@@ -593,13 +594,54 @@ class Classification(BaseModel):
 
 
 @app.post("/api/classify")
-def classify(data: Classification):
-    parsed = parse_query(data.text)
+def classify(data: Classification, user=Depends(current)):
+    parsed = ai.parse_demand(data.text)
     return {
-        "method": "rules",
+        "method": parsed["method"],
         "suggestions": [material(x) for x in parsed["material_ids"]],
+        "clarification": parsed.get("clarification"),
         "needs_confirmation": True,
-        "note": "Keyword-based suggestions. Confirm resin, condition and intended use; no image model is connected.",
+        "note": (
+            "Suggestions only. Confirm the resin, previous contents and condition "
+            "yourself; the category you publish is the one you select below."
+        ),
+    }
+
+
+@app.post("/api/classify/image")
+async def classify_image(file: UploadFile = File(...), user=Depends(current)):
+    """Candidate categories for a material photograph. Never authoritative."""
+    if not ai.enabled():
+        fail(503, "Photo suggestions are not configured on this server.")
+    raw = await file.read(5 * 1024 * 1024 + 1)
+    if len(raw) > 5 * 1024 * 1024:
+        fail(413, "Maximum file size is 5 MB.")
+    if file.content_type not in ["image/jpeg", "image/png", "image/webp"]:
+        fail(422, "Use a JPG, PNG or WebP photograph.")
+    try:
+        Image.MAX_IMAGE_PIXELS = 20_000_000
+        im = Image.open(io.BytesIO(raw))
+        im.load()
+        # Plenty for a category guess, and a fraction of the cost of the original.
+        im.thumbnail((768, 768))
+        buf = io.BytesIO()
+        im.convert("RGB").save(buf, format="JPEG", quality=80)
+    except Exception:
+        fail(422, "The image could not be read. Use a JPG, PNG or WebP under 20 megapixels.")
+    result = ai.suggest_from_image(buf.getvalue(), "image/jpeg")
+    if not result:
+        fail(503, "The suggestion service did not answer. Choose a category manually.")
+    return {
+        "method": "model",
+        "suggestions": [material(x) for x in result["material_ids"]],
+        "confidence": result["confidence"],
+        "observed": result["observed"],
+        "check": result["check"],
+        "needs_confirmation": True,
+        "note": (
+            "A photograph cannot identify a polymer. Confirm the resin, previous "
+            "contents and condition before publishing this listing."
+        ),
     }
 
 
