@@ -10,3 +10,8 @@ uploads/
 dist/
 .expo/
 *.log
+# generated voiceover audio and the mixed cuts
+docs/voiceover/*/*.wav
+docs/voiceover/*/*.mp3
+docs/voiceover/*/*.m4a
+docs/demo-video-*.mp4

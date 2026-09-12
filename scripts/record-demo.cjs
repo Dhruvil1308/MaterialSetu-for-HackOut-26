@@ -67,6 +67,14 @@ function card(kicker, headline, sub) {
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
+let t0 = 0;
+const mark = (name) => {
+  const t = (Date.now() - t0) / 1000;
+  console.log(
+    `  ${String(Math.floor(t / 60)).padStart(2, "0")}:${(t % 60).toFixed(1).padStart(4, "0")}  ${name}`,
+  );
+};
+
 (async () => {
   let browser, context;
   try {
@@ -112,6 +120,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       deviceScaleFactor: 1,
     });
     const p = await context.newPage();
+    t0 = Date.now();
     const site = "http://localhost:5291";
     const show = async (html, ms) => {
       await p.setContent(html);
@@ -119,22 +128,25 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     };
 
     // 00:00 — who this is
+    mark("brand card");
     await show(
       card("brand", "MaterialSetu", "A local exchange for surplus packaging material"),
-      4000,
+      5400,
     );
 
     // 00:04 — the problem, stated plainly
+    mark("problem card");
     await show(
       card(
         "The problem",
         "One factory throws away what the factory next door is buying.",
         "Leftovers are too small to sell. Strangers are too risky to buy from.",
       ),
-      6500,
+      9200,
     );
 
     // 00:10 — a buyer describes what they need
+    mark("buyer types the request");
     await p.goto(site);
     await p.waitForSelector(".listing-card", { timeout: 60000 });
     await p.locator(".demo-bar select").selectOption("buyer");
@@ -145,21 +157,24 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await box.type("50 kg PET within 30 km", { delay: 55 });
     await wait(700);
     await p.locator(".search-line button").click();
-    await p.waitForTimeout(2600);
+    await p.waitForTimeout(5600);
 
     // 00:20 — no single supplier has enough, so combine them
+    mark("supply plans");
     await p.locator(".pool-column").scrollIntoViewIfNeeded();
-    await wait(4200);
+    await wait(8600);
 
     // 00:25 — why this supplier can be trusted
+    mark("trust breakdown");
     await p.locator(".listing-card").first().click();
     await p.waitForTimeout(2200);
     await p.locator(".trust-panel").scrollIntoViewIfNeeded();
-    await wait(4800);
+    await wait(7300);
     await p.getByLabel("Close dialog").click();
     await wait(900);
 
     // 00:33 — send the combined plan as one request
+    mark("sending the request");
     await p.getByRole("button", { name: "Request this supply" }).first().click();
     await p.waitForTimeout(1300);
     await p
@@ -170,6 +185,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await p.waitForTimeout(2600);
 
     // 00:44 — each supplier answers for themselves; only now is stock held
+    mark("suppliers accept");
     const order = await (
       await fetch("http://localhost:8131/api/exchanges", {
         headers: {
@@ -185,10 +201,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       await p.waitForTimeout(1700);
       const row = p.locator(".exchange").filter({ hasText: "Collection Friday" });
       await row.getByRole("button", { name: "Accept & reserve", exact: true }).click();
-      await p.waitForTimeout(2100);
+      await p.waitForTimeout(2950);
     }
 
     // 00:56 — both sides must agree what actually changed hands
+    mark("confirming the handover");
     const first = plan.items[0];
     await p.locator(".demo-bar select").selectOption(first.seller_id);
     await p.waitForTimeout(1600);
@@ -204,9 +221,10 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await card2.locator('input[type="number"]').first().fill("23");
     await wait(800);
     await card2.getByRole("button", { name: "Confirm handover" }).first().click();
-    await p.waitForTimeout(3000);
+    await p.waitForTimeout(6200);
 
     // 01:10 — evidence is checked by a person before it counts
+    mark("GST and the reviewer");
     await p.locator(".demo-bar select").selectOption("s3");
     await p.waitForTimeout(1600);
     await p.getByRole("button", { name: "Trust & verification" }).click();
@@ -225,12 +243,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       .type("Certificate checked against the register", { delay: 28 });
     await wait(700);
     await p.getByRole("button", { name: "Approve review" }).first().click();
-    await p.waitForTimeout(2600);
+    await p.waitForTimeout(4900);
 
     // 01:28 — ask in your own language
+    mark("language card");
     await show(
       card("Ask in your own language", "मुझे 20 लकड़ी के पैलेट चाहिए", "Hindi, Gujarati or English"),
-      3000,
+      4600,
     );
     await p.goto(site);
     await p.waitForSelector(".listing-card", { timeout: 60000 });
@@ -242,16 +261,17 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     await wait(600);
     await p.locator(".search-line button").click();
     // Long enough to read the result, not just watch it arrive.
-    await p.waitForTimeout(6500);
+    await p.waitForTimeout(7600);
 
     // 01:40 — close
+    mark("closing card");
     await show(
       card(
         "Try it",
         "material-setu-for-hack-out-26-web.vercel.app",
         "Website · Android APK · Team Tech Titans, Ganpat University",
       ),
-      5500,
+      7200,
     );
 
     await context.close();

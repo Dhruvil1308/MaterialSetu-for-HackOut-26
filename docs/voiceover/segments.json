@@ -1,0 +1,90 @@
+{
+  "video": "docs/demo-video.mp4",
+  "note": "start is where the clip is placed in the video; budget is how long the shot lasts. Keep each reading under its budget.",
+  "segments": [
+    {
+      "id": "01-open",
+      "start": 0.0,
+      "budget": 5.3,
+      "en": "MaterialSetu. A local exchange for surplus packaging material.",
+      "hi": "मटीरियलसेतु। बची हुई पैकेजिंग सामग्री के लिए एक लोकल एक्सचेंज।"
+    },
+    {
+      "id": "02-problem",
+      "start": 5.6,
+      "budget": 8.9,
+      "en": "Every day, one factory throws away exactly what the factory next door is buying.",
+      "hi": "हर दिन, एक फैक्ट्री वही चीज़ फेंक देती है जो बगल वाली फैक्ट्री खरीद रही होती है।"
+    },
+    {
+      "id": "03-search",
+      "start": 14.8,
+      "budget": 10.4,
+      "en": "So we start where the buyer starts. Fifty kilos of PET, within thirty kilometres. Plain words.",
+      "hi": "तो शुरुआत वहीं से, जहाँ से खरीदार करता है। तीस किलोमीटर में, पचास किलो पी ई टी। सीधी भाषा में।"
+    },
+    {
+      "id": "04-pool",
+      "start": 25.5,
+      "budget": 8.3,
+      "en": "No single supplier has fifty kilos. Three nearby ones together do.",
+      "hi": "किसी एक सप्लायर के पास पचास किलो नहीं। पर पास के तीन के पास मिलाकर हैं।"
+    },
+    {
+      "id": "05-trust",
+      "start": 34.1,
+      "budget": 10.2,
+      "en": "One plan: twelve kilometres of driving, thirteen seventy-seven rupees. And you can see why this supplier scores ninety-three.",
+      "hi": "एक ही प्लान: बारह किलोमीटर, तेरह सौ सतहत्तर रुपये। और दिखता है कि इस सप्लायर को तिरानवे अंक क्यों मिले।"
+    },
+    {
+      "id": "06-request",
+      "start": 44.6,
+      "budget": 6.7,
+      "en": "The buyer sends one request. Nothing is reserved yet.",
+      "hi": "खरीदार एक ही रिक्वेस्ट भेजता है। अभी कुछ भी रिज़र्व नहीं हुआ।"
+    },
+    {
+      "id": "07-accept",
+      "start": 51.6,
+      "budget": 9.2,
+      "en": "Each supplier answers for themselves. Only when they accept is their stock held.",
+      "hi": "हर सप्लायर अपनी तरफ़ से जवाब देता है। जब वे हाँ कहते हैं, तभी उनका माल रुकता है।"
+    },
+    {
+      "id": "08-handover",
+      "start": 61.1,
+      "budget": 13.3,
+      "en": "Then both sides type what actually changed hands. The numbers must match, or neither counts. What never moved goes back on sale.",
+      "hi": "फिर दोनों पक्ष लिखते हैं कि असल में कितना माल गया। आँकड़े मिलने चाहिए, वरना कोई नहीं माना जाता। जो नहीं गया, वह वापस बिक्री पर।"
+    },
+    {
+      "id": "09-gst",
+      "start": 74.7,
+      "budget": 16.7,
+      "en": "A supplier submits their GST number, but the points come only when a person opens the certificate, writes what they checked, and approves it. We don't pretend to be the GST registry.",
+      "hi": "सप्लायर अपना जी एस टी नंबर देता है, पर अंक तभी मिलते हैं जब कोई व्यक्ति सर्टिफ़िकेट देखकर, जाँच लिखकर मंज़ूरी दे। हम जी एस टी रजिस्ट्री होने का दावा नहीं करते।"
+    },
+    {
+      "id": "10-language",
+      "start": 91.7,
+      "budget": 5.5,
+      "en": "And you can ask in your own language.",
+      "hi": "और आप अपनी भाषा में पूछ सकते हैं।"
+    },
+    {
+      "id": "11-pallets",
+      "start": 97.5,
+      "budget": 11.0,
+      "en": "Hindi, Gujarati or English. Twenty wooden pallets, found nearby.",
+      "hi": "हिंदी, गुजराती या अंग्रेज़ी। बीस लकड़ी के पैलेट, पास में ही मिल गए।"
+    },
+    {
+      "id": "12-close",
+      "start": 108.8,
+      "budget": 6.9,
+      "en": "MaterialSetu. On the web and on Android today. Built by Team Tech Titans.",
+      "hi": "मटीरियलसेतु। आज वेब पर और एंड्रॉइड पर। बनाया है टीम टेक टाइटन्स ने।"
+    }
+  ]
+}
