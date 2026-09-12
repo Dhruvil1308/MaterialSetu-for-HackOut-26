@@ -183,6 +183,7 @@ function App() {
       setDemo(h.demo);
       setTaxonomy(tax);
       setUser(me);
+      if (me) setTab((current) => home(me, current));
       // Wave two, all at once, using the account we just resolved rather than
       // waiting for React to hand it back.
       loadedFor.current = me?.id ?? null;
@@ -227,15 +228,16 @@ function App() {
   }, [user]);
   /** Keeps you where you were, unless this account cannot go there. */
   function home(who: any, current: Tab): Tab {
+    if (who.role === "admin") return "admin";
     const k = who.kind ?? "both";
     const canBuy = k === "buyer" || k === "both";
     const canSell = k === "supplier" || k === "both";
     const blocked =
       (!canBuy && current === "market") ||
       (!canSell && current === "listings") ||
-      (who.role !== "admin" && current === "admin");
+      current === "admin";
     if (!blocked) return current;
-    return who.role === "admin" ? "admin" : canBuy ? "market" : "listings";
+    return canBuy ? "market" : "listings";
   }
   async function signIn(result: any) {
     setExchanges([]);
@@ -295,8 +297,22 @@ function App() {
   }
   // A visitor is treated as a buyer: browsing is the first thing anyone does.
   const kind = user?.kind ?? "buyer";
-  const buys = !user || kind === "buyer" || kind === "both";
-  const sells = !!user && (kind === "supplier" || kind === "both");
+  const reviewer = user?.role === "admin";
+  const buys = !reviewer && (!user || kind === "buyer" || kind === "both");
+  const sells = !reviewer && !!user && (kind === "supplier" || kind === "both");
+  // Belt and braces: state can outlive a role change, and a tab with no way
+  // back to it must not render behind the scenes.
+  const view: Tab =
+    (reviewer && tab !== "admin") ||
+    (!buys && tab === "market") ||
+    (!sells && tab === "listings") ||
+    (!reviewer && tab === "admin")
+      ? reviewer
+        ? "admin"
+        : buys
+          ? "market"
+          : "listings"
+      : tab;
   const mine = all.filter((l) => l.seller_id === user?.id);
   const available = data.listings.reduce((sum, l) => sum + l.available, 0);
   const isOwn = selected?.seller_id === user?.id;
@@ -351,20 +367,22 @@ function App() {
             [
               ...(sells ? [["listings", Package, "My listings"]] : []),
               ...(buys ? [["market", LayoutGrid, "Find materials"]] : []),
-              [
-                "exchanges",
-                ArrowLeftRight,
-                sells && !buys ? "Requests" : "Exchanges",
-              ],
-              ["trust", ShieldCheck, "Trust & verification"],
-              ...(user?.role === "admin"
-                ? [["admin", FileCheck2, "Review centre"]]
-                : []),
+              ...(reviewer
+                ? []
+                : [
+                    [
+                      "exchanges",
+                      ArrowLeftRight,
+                      sells && !buys ? "Requests" : "Exchanges",
+                    ],
+                    ["trust", ShieldCheck, "Trust & verification"],
+                  ]),
+              ...(reviewer ? [["admin", FileCheck2, "Review centre"]] : []),
             ] as any[]
           ).map(([id, Icon, title]) => (
             <button
               key={id}
-              className={tab === id ? "active" : ""}
+              className={view === id ? "active" : ""}
               onClick={() => {
                 setTab(id);
                 setMenu(false);
@@ -434,7 +452,7 @@ function App() {
                   listings: "My listings",
                   trust: "Trust & verification",
                   admin: "Review centre",
-                }[tab]
+                }[view]
               }
             </b>
           </span>
@@ -448,12 +466,14 @@ function App() {
                 Sign in
               </button>
             )}
-            <button
-              className="primary"
-              onClick={() => setModal(user ? "create" : "login")}
-            >
-              <Plus size={17} /> List material
-            </button>
+            {(sells || !user) && (
+              <button
+                className="primary"
+                onClick={() => setModal(user ? "create" : "login")}
+              >
+                <Plus size={17} /> List material
+              </button>
+            )}
           </div>
         </header>
         {demo && (
@@ -524,7 +544,7 @@ function App() {
               </button>
             </div>
           )}
-          {tab === "market" && (
+          {view === "market" && (
             <>
               <div className="page-heading">
                 <div>
@@ -851,7 +871,7 @@ function App() {
               </div>
             </>
           )}
-          {tab === "listings" && (
+          {view === "listings" && (
             <>
               <Title
                 eyebrow="YOUR SUPPLY"
@@ -892,7 +912,7 @@ function App() {
               )}
             </>
           )}
-          {tab === "exchanges" && (
+          {view === "exchanges" && (
             <>
               <Title
                 eyebrow="MOVE MATERIALS FORWARD"
@@ -965,7 +985,7 @@ function App() {
               )}
             </>
           )}
-          {tab === "trust" && (
+          {view === "trust" && (
             <>
               <Title
                 eyebrow="CONFIDENCE THROUGH EVIDENCE"
@@ -1086,7 +1106,7 @@ function App() {
               )}
             </>
           )}
-          {tab === "admin" && user?.role === "admin" && (
+          {view === "admin" && user?.role === "admin" && (
             <>
               <Title
                 eyebrow="REVIEW CENTRE"
@@ -1263,11 +1283,13 @@ function App() {
                             <td>
                               {b.city}
                               <small>
-                                {b.kind === "supplier"
-                                  ? "generates surplus"
-                                  : b.kind === "buyer"
-                                    ? "collects material"
-                                    : "generates and collects"}
+                                {b.role === "admin"
+                                  ? "does not trade"
+                                  : b.kind === "supplier"
+                                    ? "generates surplus"
+                                    : b.kind === "buyer"
+                                      ? "collects material"
+                                      : "generates and collects"}
                               </small>
                             </td>
                             <td>

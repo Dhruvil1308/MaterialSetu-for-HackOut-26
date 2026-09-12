@@ -432,14 +432,21 @@ function MaterialSetu() {
     );
   const kind = user?.kind ?? "buyer";
   const reviewer = user?.role === "admin";
-  const buys = !user || kind === "buyer" || kind === "both";
-  const sells = !!user && (kind === "supplier" || kind === "both");
+  const buys = !reviewer && (!user || kind === "buyer" || kind === "both");
+  const sells = !reviewer && !!user && (kind === "supplier" || kind === "both");
   // A tab this account cannot use falls back rather than rendering empty.
   const hidden =
     (!buys && (tab === "discover" || tab === "pools")) ||
     (!sells && tab === "supply") ||
-    (!reviewer && tab === "review");
-  const view: Tab = hidden ? (buys ? "discover" : "exchanges") : tab;
+    (!reviewer && tab === "review") ||
+    (reviewer && tab === "exchanges");
+  const view: Tab = hidden
+    ? reviewer
+      ? "review"
+      : buys
+        ? "discover"
+        : "exchanges"
+    : tab;
   return (
     <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
       <StatusBar style="dark" />
@@ -465,14 +472,16 @@ function MaterialSetu() {
               : "Mehsana · Local material exchange"}
           </Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Add material listing"
-          style={s.add}
-          onPress={() => setSheet(user ? "create" : "login")}
-        >
-          <Text style={s.addText}>+</Text>
-        </Pressable>
+        {(sells || !user) && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add material listing"
+            style={s.add}
+            onPress={() => setSheet(user ? "create" : "login")}
+          >
+            <Text style={s.addText}>+</Text>
+          </Pressable>
+        )}
       </View>
       {demo && (
         <View style={s.demo}>
@@ -891,8 +900,15 @@ function MaterialSetu() {
                   <Text style={s.body}>
                     {user.email} · {user.city}
                   </Text>
-                  {ownTrust && <TrustCard trust={ownTrust} />}
+                  {!reviewer && ownTrust && <TrustCard trust={ownTrust} />}
+                  {reviewer && (
+                    <Text style={s.body}>
+                      Reviewer account. It checks other businesses' evidence and
+                      does not trade.
+                    </Text>
+                  )}
                 </View>
+                {!reviewer && (
                 <View style={s.card}>
                   <Text style={s.cardTitle}>What you use this for</Text>
                   <Text style={s.body}>
@@ -929,6 +945,8 @@ function MaterialSetu() {
                     ))}
                   </View>
                 </View>
+                )}
+                {!reviewer && (
                 <View style={s.card}>
                   <Text style={s.cardTitle}>GST review</Text>
                   <Text style={s.body}>
@@ -965,11 +983,6 @@ function MaterialSetu() {
                     onPress={() => sendEvidence("gst_document")}
                   />
                 </View>
-                {user.role === "admin" && (
-                  <Text style={s.notice}>
-                    Use the website Review centre to inspect evidence, review
-                    GST details and resolve disputes.
-                  </Text>
                 )}
                 <Button
                   title="Sign out"
@@ -999,7 +1012,11 @@ function MaterialSetu() {
                   ["pools", "▤", "Pools"],
                 ] as [Tab, string, string][])
               : []),
-            ["exchanges", "⇄", sells && !buys ? "Requests" : "Exchanges"],
+            ...(reviewer
+              ? []
+              : ([
+                  ["exchanges", "⇄", sells && !buys ? "Requests" : "Exchanges"],
+                ] as [Tab, string, string][])),
             ...(sells ? ([["supply", "+", "Supply"]] as [Tab, string, string][]) : []),
             ...(reviewer
               ? ([["review", "✓", "Review"]] as [Tab, string, string][])
