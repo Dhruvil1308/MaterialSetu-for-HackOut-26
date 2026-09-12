@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "MaterialSetu",
+    "slug": "materialsetu",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "in.materialsetu.app"
+    },
+    "android": {
+      "predictiveBackGestureEnabled": false,
+      "package": "in.materialsetu.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "materialsetu",
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose material photos for your listings.",
+          "cameraPermission": "Photograph materials for your listings."
+        }
+      ],
+      "expo-secure-store",
+      "expo-document-picker"
+    ]
+  }
+}

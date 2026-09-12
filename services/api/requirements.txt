@@ -1,0 +1,9 @@
+# Direct dependencies pinned to the versions used for this development release.
+fastapi==0.141.1
+uvicorn==0.52.4
+sqlalchemy==2.0.52
+psycopg[binary]==3.3.5
+python-multipart==0.0.32
+Pillow==12.3.0
+httpx==0.28.1
+pytest==9.1.1

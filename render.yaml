@@ -1,0 +1,58 @@
+# Render Blueprint for the MaterialSetu API.
+#
+# Create it from the Render dashboard with New -> Blueprint, pointed at this
+# repository. Two values are deliberately left empty and must be filled in on the
+# service's Environment page, because they are secrets or depend on the URLs Render
+# hands out after the first deploy.
+#
+# The website and the mobile app are built separately; this deploys only the API.
+
+services:
+  - type: web
+    name: materialsetu-api
+    runtime: python
+    plan: free
+    # Singapore is Render's closest region to India. Keep the Supabase project in
+    # the same region: every API-to-database round trip is charged to page load,
+    # and a cross-region pair costs well over a second per search.
+    region: singapore
+    rootDir: services/api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.4"
+
+      # Supabase -> Connect -> Direct -> Transaction pooler, with two edits:
+      #   postgresql://      becomes  postgresql+psycopg://
+      #   append nothing else - DB_SCHEMA below places the tables.
+      # Use the pooler hostname. db.<ref>.supabase.co is IPv6-only and Render
+      # cannot reach it.
+      #   postgresql+psycopg://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres
+      - key: DATABASE_URL
+        sync: false
+
+      # Keeps the tables out of `public`, which Supabase publishes over HTTP to
+      # the anonymous key that ships inside the website and the APK.
+      - key: DB_SCHEMA
+        value: app
+
+      # Comma-separated origins allowed to call this API: the deployed website,
+      # and nothing else. The mobile app is not a browser and needs no entry.
+      - key: CORS_ORIGINS
+        sync: false
+
+      # 1 enables the fictional demo accounts and their passwordless quick login,
+      # which is what the walkthrough in docs/demo.md relies on. Set it to 0 for
+      # anything resembling a pilot.
+      - key: DEMO_MODE
+        value: "1"
+
+      # The free plan has no persistent disk, so uploaded photos, weighing slips
+      # and GST documents are lost on every restart and redeploy. The seeded demo
+      # evidence is regenerated automatically; real uploads are not. Move these to
+      # object storage before anyone relies on them.
+      - key: UPLOAD_DIR
+        value: ./uploads
