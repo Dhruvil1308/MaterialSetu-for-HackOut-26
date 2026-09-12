@@ -100,11 +100,14 @@ function App() {
     [pending, setPending] = useState<any>({ gst: [], evidence: [] }),
     [disputes, setDisputes] = useState<any[]>([]);
   const initialized = useRef(false),
-    searchSeq = useRef(0);
-  const origin = {
-    latitude: user?.latitude ?? 23.588,
-    longitude: user?.longitude ?? 72.369,
-  };
+    searchSeq = useRef(0),
+    loadedFor = useRef<string | null | undefined>(undefined);
+  function where(who: User | null) {
+    return {
+      latitude: who?.latitude ?? 23.588,
+      longitude: who?.longitude ?? 72.369,
+    };
+  }
   async function run(fn: () => Promise<void>) {
     setError("");
     setNotice("");
@@ -117,29 +120,30 @@ function App() {
       setBusy(false);
     }
   }
-  async function refresh() {
-    const [ls, ex] = await Promise.all([
+  async function refresh(who: User | null = user) {
+    const admin = who?.role === "admin";
+    // One wave, not four: none of these depend on each other's answers.
+    const [ls, ex, mine, queue, rows] = await Promise.all([
       api<Listing[]>("/listings"),
-      user ? api<Exchange[]>("/exchanges") : Promise.resolve([]),
+      who ? api<Exchange[]>("/exchanges") : Promise.resolve([]),
+      who ? api(`/businesses/${who.id}/trust`) : Promise.resolve(null),
+      admin ? api("/admin/evidence") : Promise.resolve(null),
+      admin ? api<any[]>("/admin/disputes") : Promise.resolve(null),
     ]);
     setAll(ls);
     setExchanges(ex);
-    if (user) {
-      setTrust(await api(`/businesses/${user.id}/trust`));
-      if (user.role === "admin") {
-        setPending(await api("/admin/evidence"));
-        setDisputes(await api("/admin/disputes"));
-      }
-    }
+    setTrust(mine);
+    if (queue) setPending(queue);
+    if (rows) setDisputes(rows);
   }
-  async function search() {
+  async function search(who: User | null = user) {
     const seq = ++searchSeq.current;
     const result = await api<SearchResult>("/search", {
       method: "POST",
       body: JSON.stringify({
         query,
         material_id: mat,
-        ...origin,
+        ...where(who),
         radius_km: radius,
         quantity,
         unit,
@@ -160,19 +164,31 @@ function App() {
     // request. Say so rather than showing an empty marketplace.
     const slow = setTimeout(() => setWaking(true), 2500);
     try {
-      const h = await api("/health");
+      // Wave one: nothing here needs anything else here.
+      const token = localStorage.getItem("materialsetu-token");
+      const [h, tax, me] = await Promise.all([
+        api("/health"),
+        api<Material[]>("/taxonomy"),
+        token
+          ? api<User>("/me").catch(() => {
+              localStorage.removeItem("materialsetu-token");
+              return null;
+            })
+          : Promise.resolve(null),
+      ]);
       setDemo(h.demo);
-      setTaxonomy(await api("/taxonomy"));
-      if (h.demo) setAccounts(await api("/demo/accounts"));
-      if (localStorage.getItem("materialsetu-token")) {
-        try {
-          setUser(await api("/me"));
-        } catch {
-          localStorage.removeItem("materialsetu-token");
-        }
-      }
-      await search();
-      await refresh();
+      setTaxonomy(tax);
+      setUser(me);
+      // Wave two, all at once, using the account we just resolved rather than
+      // waiting for React to hand it back.
+      loadedFor.current = me?.id ?? null;
+      await Promise.all([
+        h.demo
+          ? api<User[]>("/demo/accounts").then(setAccounts)
+          : Promise.resolve(),
+        search(me),
+        refresh(me),
+      ]);
       setReady(true);
     } catch (e) {
       const detail = (e as Error).message;
@@ -192,14 +208,18 @@ function App() {
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
+    // Claim the signed-out view before the [user] effect runs on this same mount,
+    // otherwise it fetches everything a second time alongside boot.
+    loadedFor.current = null;
     boot();
   }, []);
   useEffect(() => {
-    if (initialized.current)
-      run(async () => {
-        await refresh();
-        await search();
-      });
+    // Boot already loaded this account; only act on a real change of account.
+    if (!initialized.current || loadedFor.current === (user?.id ?? null)) return;
+    loadedFor.current = user?.id ?? null;
+    run(async () => {
+      await Promise.all([refresh(), search()]);
+    });
   }, [user]);
   async function signIn(result: any) {
     setExchanges([]);

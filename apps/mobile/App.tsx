@@ -137,14 +137,17 @@ function MaterialSetu() {
     setData(r);
   }
   async function refresh(currentUser = user) {
-    setAll(await api("/listings"));
-    if (currentUser) {
-      setExchanges(await api("/exchanges"));
-      setOwnTrust(await api(`/businesses/${currentUser.id}/trust`));
-    } else {
-      setExchanges([]);
-      setOwnTrust(null);
-    }
+    // One wave: none of these depend on each other's answers.
+    const [all, exchanges, trust] = await Promise.all([
+      api<Listing[]>("/listings"),
+      currentUser ? api<Exchange[]>("/exchanges") : Promise.resolve([]),
+      currentUser
+        ? api<Trust>(`/businesses/${currentUser.id}/trust`)
+        : Promise.resolve(null),
+    ]);
+    setAll(all);
+    setExchanges(exchanges);
+    setOwnTrust(trust);
   }
   async function signedIn(r: any) {
     setExchanges([]);
@@ -165,22 +168,31 @@ function MaterialSetu() {
     const slow = setTimeout(() => setWaking(true), 2500);
     try {
       await loadToken();
-      const health = await api("/health");
+      // Wave one: nothing here needs anything else here.
+      const [health, materials, u] = await Promise.all([
+        api<any>("/health"),
+        api<Material[]>("/taxonomy"),
+        token
+          ? api<User>("/me").catch(async () => {
+              await saveToken(null);
+              return null;
+            })
+          : Promise.resolve(null),
+      ]);
       setDemo(health.demo);
-      setMaterials(await api("/taxonomy"));
-      if (health.demo) setAccounts(await api("/demo/accounts"));
-      let u = null;
-      if (token) {
-        try {
-          u = await api<User>("/me");
-          setUser(u);
-          setGst(u.gstin);
-        } catch {
-          await saveToken(null);
-        }
+      setMaterials(materials);
+      if (u) {
+        setUser(u);
+        setGst(u.gstin);
       }
-      await refresh(u);
-      await find(u);
+      // Wave two, all at once, using the account just resolved.
+      await Promise.all([
+        health.demo
+          ? api<User[]>("/demo/accounts").then(setAccounts)
+          : Promise.resolve(),
+        refresh(u),
+        find(u),
+      ]);
       setReady(true);
     } catch (e) {
       const detail = e instanceof Error ? e.message : "";
