@@ -51,6 +51,7 @@ deployment.
 | Demo account passwords | **Verified unusable** — the seeded password no longer authenticates |
 | Multilingual demand extraction | **Verified live** in Hindi and Gujarati, and on everyday English wording |
 | Photo category suggestion | **Verified live** — a pallet photograph returns wooden pallets at high confidence; a photograph of a document correctly returns no match |
+| Evidence storage | **Verified live** — an upload through the deployed site lands in the private Supabase bucket, is readable by its owner and a reviewer, and returns 401 to anyone else |
 
 Search against the deployed stack answers in roughly 0.9 s. The API is in Singapore and the database in Tokyo, so most of that is the distance between them rather than query cost: a single round trip to the database measures about 137 ms, and one search issues a fixed 8 statements.
 
@@ -60,7 +61,7 @@ Screenshots in `docs/screenshots` are taken from the running application using f
 
 Not executed: an App Store or Play Store submission, physical device camera / secure-store verification, GST provider integration, payments, or external logistics. These are not represented as completed.
 
-Known gaps in the deployment rather than the code: uploaded evidence is written to the API host's local disk, which is not persistent, so files uploaded by a real user are lost on restart; the model adapter has no per-account quota, though both of its routes require a signed-in account; and there is no rate limit on sign-in.
+Known gaps in the deployment rather than the code: the model adapter has no per-account quota, though both of its routes require a signed-in account; there is no rate limit on sign-in; and the database is in Tokyo while the API is in Singapore, which is most of the 0.9 s a search costs.
 
 ## Reproduce
 
