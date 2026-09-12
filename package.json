@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @materialsetu/web",
-    "build": "npm run build -w @materialsetu/web && node scripts/mirror-dist.mjs",
+    "build": "npm run build -w @materialsetu/web",
     "typecheck": "npm run typecheck -w @materialsetu/web"
   },
   "devDependencies": {
