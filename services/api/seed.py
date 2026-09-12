@@ -1,8 +1,11 @@
 """Explicitly fictional development fixtures. Called only with DEMO_MODE=1."""
 
+import io
 import time
+
 from PIL import Image, ImageDraw
 from sqlalchemy import select
+import storage
 from models import Session, Business, Listing, Evidence, Exchange, ExchangeItem, Review
 
 
@@ -96,13 +99,15 @@ def demo_files(folder):
     Safe to call repeatedly, and called before the early return below: a host with
     an ephemeral filesystem loses these files on every restart while the database
     rows that point at them survive, which would leave the demo listings showing
-    broken evidence.
+    broken evidence. One listing call decides what is actually absent, so a warm
+    start uploads nothing.
     """
-    folder.mkdir(parents=True, exist_ok=True)
+    wanted = [f"{lid}-{kind}.png" for lid, *_ in LOTS[:5] for kind in ("photo", "weighing_slip")]
+    absent = set(storage.missing(wanted))
     for lid, *_ in LOTS[:5]:
         for kind in ["photo", "weighing_slip"]:
-            path = folder / f"{lid}-{kind}.png"
-            if path.exists():
+            name = f"{lid}-{kind}.png"
+            if name not in absent:
                 continue
             im = Image.new("RGB", (900, 550), "#e9f0eb")
             draw = ImageDraw.Draw(im)
@@ -124,7 +129,9 @@ def demo_files(folder):
                 fill="black",
                 font_size=23,
             )
-            im.save(path)
+            buf = io.BytesIO()
+            im.save(buf, format="PNG")
+            storage.put(name, buf.getvalue(), "image/png")
 
 
 def seed(folder):

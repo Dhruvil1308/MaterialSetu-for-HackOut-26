@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy import select, update, func
 from sqlalchemy.exc import IntegrityError
@@ -25,6 +25,7 @@ from models import (
 )
 from domain import TAXONOMY, material, parse_query, haversine, pool_options
 import ai
+import storage
 
 DEMO = os.getenv("DEMO_MODE", "0") == "1"
 UPLOADS = Path(os.getenv("UPLOAD_DIR", "./uploads"))
@@ -341,6 +342,7 @@ def health():
         "classification": "model" if ai.enabled() else "rules",
         "gst_verification": "manual_review",
         "pooling": "local_route_estimate",
+        "evidence_storage": storage.describe(),
     }
 
 
@@ -714,7 +716,10 @@ async def upload(
         mime = "application/pdf"
     else:
         fail(422, "Use an image for photos, or an image/PDF for documents.")
-    (UPLOADS / filename).write_bytes(raw)
+    try:
+        storage.put(filename, raw, mime)
+    except Exception:
+        fail(503, "The file could not be stored. Please try again.")
     e = Evidence(
         id=eid,
         business_id=user.id,
@@ -741,15 +746,17 @@ def get_evidence(
         u = current(auth, db)
         if u.id != e.business_id and u.role != "admin":
             fail(403, "Private evidence is visible to its owner and reviewers only.")
-    path = UPLOADS / e.filename
-    if not path.exists():
+    raw = storage.get(e.filename)
+    if raw is None:
         fail(404, "Evidence file is missing.")
-    return FileResponse(
-        path,
+    return Response(
+        content=raw,
         media_type=e.mime,
         headers={
             "X-Content-Type-Options": "nosniff",
             "Content-Disposition": "inline" if e.kind == "photo" else "attachment",
+            # Immutable: the name is derived from the record, never reused.
+            "Cache-Control": "private, max-age=86400",
         },
     )
 

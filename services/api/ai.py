@@ -23,6 +23,9 @@ MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 TIMEOUT = float(os.getenv("OPENAI_TIMEOUT", "20"))
 IDS = [m["id"] for m in TAXONOMY]
 
+# Reused for the same reason as storage.py: the handshake dominates the call.
+_client = httpx.Client(timeout=TIMEOUT, limits=httpx.Limits(max_keepalive_connections=4))
+
 CATALOGUE = "\n".join(
     f"- {m['id']}: {m['name']} ({m['category']}, sold per {m['unit']}). "
     f"Also called: {', '.join(m['aliases'])}."
@@ -41,7 +44,7 @@ def _ask(messages, max_tokens=300):
     if not key:
         return None
     try:
-        r = httpx.post(
+        r = _client.post(
             ENDPOINT,
             headers={"Authorization": "Bearer " + key},
             json={
@@ -51,7 +54,6 @@ def _ask(messages, max_tokens=300):
                 "temperature": 0,
                 "response_format": {"type": "json_object"},
             },
-            timeout=TIMEOUT,
         )
         if r.status_code != 200:
             return None

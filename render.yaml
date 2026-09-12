@@ -59,10 +59,18 @@ services:
       - key: OPENAI_MODEL
         value: gpt-4o-mini
 
-      # The free plan has no persistent disk, so uploaded photos, weighing slips
-      # and GST documents are lost on every restart and redeploy. The seeded demo
-      # evidence is regenerated automatically; real uploads are not. Move these to
-      # object storage before anyone relies on them.
+      # Uploaded evidence goes to a private Supabase Storage bucket. Without
+      # these the API falls back to UPLOAD_DIR below, which this plan wipes on
+      # every restart. Server-side only.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: evidence
+
+      # Only used when the Supabase Storage settings above are absent. This plan
+      # has no persistent disk, so anything written here is lost on restart.
       - key: UPLOAD_DIR
         value: ./uploads
 
