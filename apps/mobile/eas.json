@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">=16.0.0"
+    "version": ">=16.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -17,10 +18,22 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://materialsetu-for-hackout-26.onrender.com/api"
+      },
+      "ios": {
+        "simulator": false
       }
     },
     "production": {
       "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://materialsetu-for-hackout-26.onrender.com/api"
+      }
+    },
+    "ios-simulator": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://materialsetu-for-hackout-26.onrender.com/api"
       }
