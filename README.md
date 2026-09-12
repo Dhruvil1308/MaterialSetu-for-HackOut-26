@@ -151,6 +151,16 @@ flowchart TD
 | 🏭 **Supplier** | A business with surplus | List material, upload proof, accept, confirm |
 | 🛡️ **Reviewer** | MaterialSetu staff | Check GST and documents, settle disputes |
 
+**Trying it out?** Pick these from the **"Explore as"** menu to see each side:
+
+| Pick this account | You become |
+| :-- | :-- |
+| **Setu Packaging Studio** | the 🛒 buyer — start here |
+| **North Gujarat Polymers** or **Umiya Packaging Works** | a 🏭 supplier — accept the buyer's request |
+| **MaterialSetu Reviewer** | the 🛡️ reviewer — a "Review centre" tab appears |
+
+Switching accounts is how you play both sides of one deal. There are no passwords in demo mode.
+
 Nobody can make themselves a reviewer. Signing up always creates a normal business account; the reviewer role is given from the database by an operator.
 
 ---
@@ -303,6 +313,66 @@ node scripts/browser-smoke.cjs              # real browser, end to end
 ```
 
 </details>
+
+<details>
+<summary><b>Turn on the language and photo features locally</b></summary>
+
+They are optional. Without a key the app uses keyword rules and everything else
+works normally.
+
+```bash
+export OPENAI_API_KEY=sk-...     # server-side only, never in the website or app
+python scripts/dev.py
+```
+
+Check it took effect: `http://localhost:8000/api/health` should report
+`"classification": "model"`.
+
+</details>
+
+---
+
+## 📁 Where things are
+
+```text
+apps/web/          the website — React + Vite
+apps/mobile/       the Android and iOS app — React Native + Expo
+packages/shared/   API types and helpers both clients use
+services/api/      the whole backend
+  ├── main.py      every endpoint
+  ├── domain.py    matching, pooling and cost rules — no framework, easy to read
+  ├── models.py    the database tables
+  ├── ai.py        optional language and photo suggestions
+  └── test_api.py  the 17 tests
+docs/              architecture, demo script, validation notes
+```
+
+If you only read one file, read **`services/api/domain.py`** — the pooling and
+cost logic is all there in plain Python.
+
+---
+
+## ☁️ How it is deployed
+
+| Piece | Where | Set up with |
+| :-- | :-- | :-- |
+| Website | Vercel | `vercel.json` |
+| API | Render (Singapore) | `render.yaml` |
+| Database | Supabase (PostgreSQL) | `DATABASE_URL` + `DB_SCHEMA=app` |
+| Android app | EAS Build | `apps/mobile/eas.json` |
+
+The API needs `DATABASE_URL`, `DB_SCHEMA`, `CORS_ORIGINS` and optionally
+`OPENAI_API_KEY`. The website needs only `VITE_API_URL`. Every one of them is
+explained in [.env.example](.env.example).
+
+**Why `DB_SCHEMA` matters:** Supabase publishes the `public` schema over HTTPS to
+the browser key that ships inside the website and the app. Putting our tables in a
+private `app` schema instead is what keeps password hashes and session tokens out
+of reach.
+
+The free API server sleeps after 15 minutes of quiet, so
+[a scheduled job](.github/workflows/keep-warm.yml) pings it to keep the first
+visit fast.
 
 ---
 
