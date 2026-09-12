@@ -269,6 +269,11 @@ function App() {
     return <Startup waking={waking} error={bootError} onRetry={boot} />;
   return (
     <div className="app-shell">
+      {busy && (
+        <div className="loadbar" role="status" aria-label="Loading">
+          <span />
+        </div>
+      )}
       <aside className={`sidebar ${menu ? "open" : ""}`}>
         <a
           className="brand"
@@ -518,7 +523,7 @@ function App() {
                   />
                   <button className="primary" disabled={busy}>
                     {busy ? "Searching…" : "Find materials"}
-                    <ArrowRight size={17} />
+                    {busy ? <span className="spinner" /> : <ArrowRight size={17} />}
                   </button>
                 </div>
                 <div className="search-options">
@@ -1463,7 +1468,8 @@ function App() {
                   })
                 }
               >
-                Send request <ArrowUpRight size={17} />
+                {busy ? "Sending…" : "Send request"}
+                {busy ? <span className="spinner" /> : <ArrowUpRight size={17} />}
               </button>
             </>
           )}
@@ -1929,7 +1935,8 @@ function CreateForm({
         </Field>
       </div>
       <button className="primary full" disabled={busy}>
-        Publish listing <ArrowUpRight size={16} />
+        {busy ? "Publishing…" : "Publish listing"}
+        {busy ? <span className="spinner" /> : <ArrowUpRight size={16} />}
       </button>
       <p className="micro">
         Add photos and weighing slips after publishing. Your account location is
@@ -1978,7 +1985,7 @@ function UploadForm({ kind, listingId, onDone, onError }: any) {
         />
       </Field>
       <button disabled={uploading} className="outline">
-        <Upload size={15} />
+        {uploading ? <span className="spinner" /> : <Upload size={15} />}
         {uploading ? "Uploading…" : "Upload for review"}
       </button>
     </form>

@@ -53,6 +53,17 @@ async function loadToken() {
       ? localStorage.getItem("materialsetu-mobile-token")
       : await SecureStore.getItemAsync("materialsetu-token");
 }
+/** Plastic, paper and timber each read differently at a glance. */
+function family(category: string) {
+  const c = (category || "").toLowerCase();
+  if (c === "plastic")
+    return { backgroundColor: "#eef4f5", borderLeftColor: "#2e6f7e" };
+  if (c === "paper")
+    return { backgroundColor: "#f7f1e8", borderLeftColor: "#9a6b34" };
+  if (c === "wood")
+    return { backgroundColor: "#f5efe7", borderLeftColor: "#7a5a34" };
+  return {};
+}
 const initial: SearchResult = {
   listings: [],
   pools: [],
@@ -366,7 +377,7 @@ function MaterialSetu() {
             </>
           ) : (
             <>
-              <ActivityIndicator color="#174b3a" style={{ marginTop: 4 }} />
+              <ActivityIndicator color="#0f3d31" style={{ marginTop: 4 }} />
               <Text style={s.startupStatus}>
                 {waking ? "Waking the server…" : "Loading the exchange…"}
               </Text>
@@ -453,7 +464,7 @@ function MaterialSetu() {
                 await find();
               })
             }
-            tintColor="#174b3a"
+            tintColor="#0f3d31"
           />
         }
       >
@@ -476,7 +487,7 @@ function MaterialSetu() {
                 onChangeText={setQuery}
                 style={s.searchInput}
                 placeholder="50 kg plastic"
-                placeholderTextColor="#718477"
+                placeholderTextColor="#8b948e"
                 returnKeyType="search"
                 onSubmitEditing={() => run(() => find())}
               />
@@ -871,7 +882,7 @@ function MaterialSetu() {
               keyboardShouldPersistTaps="handled"
             >
               <Feedback error={error} message={message} />
-              {busy && <ActivityIndicator color="#174b3a" />}
+              {busy && <ActivityIndicator size="small" color="#0f3d31" />}
               {sheet === "login" && (
                 <LoginForm
                   busy={busy}
@@ -1207,7 +1218,7 @@ function MaterialCard({
       onPress={onPress}
       style={s.materialCard}
     >
-      <View style={s.materialBanner}>
+      <View style={[s.materialBanner, family(l.material.category)]}>
         <Text style={s.materialCode}>{l.material_id.toUpperCase()}</Text>
         <Text style={s.materialCategory}>
           {l.material.category} · {label(l.intent)}
@@ -1686,13 +1697,13 @@ function OrderItem({
   );
 }
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#f6f8f7" },
+  screen: { flex: 1, backgroundColor: "#fbfaf7" },
   startup: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
   startupMark: {
     width: 58,
     height: 58,
     borderRadius: 16,
-    backgroundColor: "#123d31",
+    backgroundColor: "#0f3d31",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1700,39 +1711,39 @@ const s = StyleSheet.create({
   startupBrand: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#123d31",
+    color: "#0f3d31",
     marginTop: 16,
   },
   startupTagline: {
     fontSize: 10,
     letterSpacing: 2.2,
-    color: "#6e7d75",
+    color: "#5a6560",
     marginTop: 4,
     marginBottom: 26,
   },
   startupStatus: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#123d31",
+    color: "#0f3d31",
     marginTop: 18,
     marginBottom: 6,
   },
   startupFailed: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#a2372a",
+    color: "#99251f",
     textAlign: "center",
     marginBottom: 8,
   },
   startupHint: {
     fontSize: 13,
     lineHeight: 19,
-    color: "#6e7d75",
+    color: "#5a6560",
     textAlign: "center",
   },
   startupRetry: {
     marginTop: 20,
-    backgroundColor: "#174b3a",
+    backgroundColor: "#0f3d31",
     paddingVertical: 12,
     paddingHorizontal: 26,
     borderRadius: 10,
@@ -1754,10 +1765,10 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     borderBottomWidth: 1,
-    borderColor: "#dce5de",
+    borderColor: "#e4e7e1",
   },
   logo: {
-    backgroundColor: "#174b3a",
+    backgroundColor: "#0f3d31",
     width: 35,
     height: 37,
     borderRadius: 9,
@@ -1768,21 +1779,21 @@ const s = StyleSheet.create({
   brand: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#163d2d",
+    color: "#0f3d31",
     letterSpacing: -0.8,
   },
-  small: { fontSize: 12, lineHeight: 18, color: "#748579" },
+  small: { fontSize: 12, lineHeight: 18, color: "#8b948e" },
   add: {
-    backgroundColor: "#e8f0ea",
+    backgroundColor: "#f3f4f0",
     borderRadius: 9,
     width: 38,
     height: 38,
     justifyContent: "center",
     alignItems: "center",
   },
-  addText: { fontSize: 26, color: "#174b3a" },
+  addText: { fontSize: 26, color: "#0f3d31" },
   demo: {
-    backgroundColor: "#f6eed9",
+    backgroundColor: "#fdf5e9",
     paddingTop: 9,
     paddingHorizontal: 20,
     paddingBottom: 3,
@@ -1790,27 +1801,27 @@ const s = StyleSheet.create({
   demoText: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#786740",
+    color: "#a8630c",
     letterSpacing: 0.5,
   },
   chips: { flexDirection: "row", gap: 7, paddingVertical: 12 },
   chip: {
     borderWidth: 1,
-    borderColor: "#d5dfd7",
+    borderColor: "#e4e7e1",
     backgroundColor: "#fff",
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 13,
   },
-  chipActive: { backgroundColor: "#174b3a", borderColor: "#174b3a" },
-  chipText: { fontSize: 12, color: "#5b7463" },
+  chipActive: { backgroundColor: "#0f3d31", borderColor: "#0f3d31" },
+  chipText: { fontSize: 12, color: "#5a6560" },
   white: { color: "#fff" },
   content: { padding: 20, paddingBottom: 35 },
   eyebrow: {
     fontSize: 10,
     letterSpacing: 1.5,
     fontWeight: "600",
-    color: "#6d8876",
+    color: "#8b948e",
     marginTop: 8,
     marginBottom: 12,
   },
@@ -1819,26 +1830,26 @@ const s = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 39,
     letterSpacing: -1,
-    color: "#174b3a",
+    color: "#0f3d31",
     marginBottom: 12,
   },
-  body: { fontSize: 14, lineHeight: 21, color: "#6c7d70", marginBottom: 10 },
+  body: { fontSize: 14, lineHeight: 21, color: "#5a6560", marginBottom: 10 },
   searchBox: {
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#dce5de",
+    borderColor: "#e4e7e1",
     borderRadius: 12,
     padding: 15,
     marginTop: 13,
   },
   searchInput: {
     fontSize: 18,
-    color: "#203b2b",
+    color: "#141916",
     paddingVertical: 9,
     paddingHorizontal: 5,
   },
   button: {
-    backgroundColor: "#174b3a",
+    backgroundColor: "#0f3d31",
     paddingHorizontal: 17,
     paddingVertical: 14,
     borderRadius: 7,
@@ -1846,14 +1857,14 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#174b3a",
+    borderColor: "#0f3d31",
   },
   buttonText: { fontSize: 14, fontWeight: "600", color: "white" },
-  outline: { backgroundColor: "#fff", borderColor: "#cbd9cf" },
-  outlineText: { color: "#174b3a" },
+  outline: { backgroundColor: "#fff", borderColor: "#e4e7e1" },
+  outlineText: { color: "#0f3d31" },
   filterLabel: {
     fontSize: 12,
-    color: "#718674",
+    color: "#8b948e",
     paddingTop: 8,
     paddingBottom: 3,
   },
@@ -1861,39 +1872,41 @@ const s = StyleSheet.create({
   inputLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#425e4a",
+    color: "#5a6560",
     marginBottom: 5,
   },
   input: {
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#ccdacd",
+    borderColor: "#e4e7e1",
     borderRadius: 6,
     padding: 12,
     fontSize: 15,
-    color: "#213c2b",
+    color: "#141916",
   },
   switchRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderColor: "#d6e0d8",
+    borderColor: "#e4e7e1",
     marginBottom: 20,
     gap: 20,
   },
   switch: { paddingVertical: 12 },
-  switchActive: { borderBottomWidth: 2, borderColor: "#174b3a" },
-  switchText: { fontSize: 13, color: "#718877" },
-  switchTextActive: { fontSize: 13, color: "#174b3a", fontWeight: "700" },
+  switchActive: { borderBottomWidth: 2, borderColor: "#0f3d31" },
+  switchText: { fontSize: 13, color: "#8b948e" },
+  switchTextActive: { fontSize: 13, color: "#0f3d31", fontWeight: "700" },
   materialCard: {
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#dde6df",
+    borderColor: "#e4e7e1",
     borderRadius: 11,
     marginBottom: 16,
     overflow: "hidden",
   },
   materialBanner: {
-    backgroundColor: "#e5eee7",
+    backgroundColor: "#f3f4f0",
+    borderLeftWidth: 3,
+    borderLeftColor: "#8b948e",
     padding: 20,
     minHeight: 100,
     justifyContent: "center",
@@ -1902,12 +1915,12 @@ const s = StyleSheet.create({
     fontSize: 34,
     fontWeight: "700",
     letterSpacing: -1,
-    color: "#688a71",
+    color: "#5a6560",
   },
   materialCategory: {
     fontSize: 11,
     letterSpacing: 1,
-    color: "#6a8372",
+    color: "#8b948e",
     marginTop: 5,
   },
   distance: {
@@ -1915,7 +1928,7 @@ const s = StyleSheet.create({
     right: 12,
     top: 12,
     fontSize: 11,
-    color: "#46684e",
+    color: "#2c6a4c",
     backgroundColor: "#ffffffc9",
     padding: 5,
     borderRadius: 4,
@@ -1923,37 +1936,37 @@ const s = StyleSheet.create({
   trustBadge: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#39734b",
-    backgroundColor: "#edf5ed",
+    color: "#2c6a4c",
+    backgroundColor: "#edf3f0",
     padding: 5,
     borderRadius: 5,
   },
-  trustBadgeNew: { color: "#7a6a3f", backgroundColor: "#f3f1ea" },
+  trustBadgeNew: { color: "#a8630c", backgroundColor: "#fdf5e9" },
   cardTitle: {
     fontSize: 17,
     lineHeight: 23,
     fontWeight: "600",
-    color: "#294934",
+    color: "#1b5c49",
     marginBottom: 7,
   },
   price: {
     fontSize: 22,
     fontWeight: "600",
     letterSpacing: -0.4,
-    color: "#234931",
+    color: "#1b5c49",
   },
   cardBottom: {
     fontSize: 11,
-    color: "#7b9080",
+    color: "#8b948e",
     borderTopWidth: 1,
-    borderColor: "#edf2ed",
+    borderColor: "#f3f4f0",
     marginTop: 16,
     paddingTop: 12,
   },
   card: {
     borderRadius: 11,
     borderWidth: 1,
-    borderColor: "#dce5de",
+    borderColor: "#e4e7e1",
     backgroundColor: "#fff",
     padding: 20,
     marginVertical: 9,
@@ -1966,9 +1979,9 @@ const s = StyleSheet.create({
   },
   poolStep: {
     fontSize: 13,
-    color: "#54775b",
+    color: "#5a6560",
     padding: 7,
-    backgroundColor: "#eef3ed",
+    backgroundColor: "#f3f4f0",
     borderRadius: 20,
   },
   costRow: {
@@ -1982,24 +1995,24 @@ const s = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderColor: "#dae4dc",
+    borderColor: "#e4e7e1",
     paddingTop: 8,
     paddingBottom: 9,
   },
   navItem: { flex: 1, alignItems: "center", gap: 3 },
-  navIcon: { fontSize: 24, color: "#8a9c8e", lineHeight: 28 },
-  navText: { fontSize: 10, color: "#819386" },
-  navSelected: { color: "#174b3a", fontWeight: "700" },
+  navIcon: { fontSize: 24, color: "#8b948e", lineHeight: 28 },
+  navText: { fontSize: 10, color: "#8b948e" },
+  navSelected: { color: "#0f3d31", fontWeight: "700" },
   footer: {
     textAlign: "center",
     fontSize: 9,
     letterSpacing: 1.5,
-    color: "#8b9d8e",
+    color: "#8b948e",
     marginTop: 30,
   },
   error: {
-    backgroundColor: "#fbe8e0",
-    color: "#993e22",
+    backgroundColor: "#fbedec",
+    color: "#99251f",
     padding: 13,
     borderRadius: 7,
     fontSize: 13,
@@ -2007,8 +2020,8 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   message: {
-    backgroundColor: "#e3f0e6",
-    color: "#386d45",
+    backgroundColor: "#e8f2ec",
+    color: "#1b5c49",
     padding: 13,
     borderRadius: 7,
     fontSize: 13,
@@ -2016,8 +2029,8 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   notice: {
-    backgroundColor: "#edf4ee",
-    color: "#4d7758",
+    backgroundColor: "#edf3f0",
+    color: "#2c6a4c",
     fontSize: 12,
     padding: 10,
     borderRadius: 6,
@@ -2029,31 +2042,31 @@ const s = StyleSheet.create({
     paddingVertical: 14,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderColor: "#dce5de",
+    borderColor: "#e4e7e1",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  close: { fontSize: 31, color: "#466b50", paddingHorizontal: 8 },
-  detailMetric: { backgroundColor: "#edf4ee" },
+  close: { fontSize: 31, color: "#2c6a4c", paddingHorizontal: 8 },
+  detailMetric: { backgroundColor: "#edf3f0" },
   trustHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 15,
     marginBottom: 20,
   },
-  bigScore: { fontSize: 43, fontWeight: "600", color: "#285c37" },
+  bigScore: { fontSize: 43, fontWeight: "600", color: "#1b5c49" },
   progress: {
     height: 5,
-    backgroundColor: "#eaf1eb",
+    backgroundColor: "#f3f4f0",
     borderRadius: 5,
     marginVertical: 9,
     overflow: "hidden",
   },
-  progressFill: { height: 5, backgroundColor: "#638b6c" },
+  progressFill: { height: 5, backgroundColor: "#8b948e" },
   order: {
     borderTopWidth: 1,
-    borderColor: "#dce5de",
+    borderColor: "#e4e7e1",
     paddingTop: 17,
     marginTop: 15,
   },
