@@ -128,9 +128,16 @@ def demo_files(folder):
 
 
 def seed(folder):
+    import secrets
+
     from main import hash_password
 
     demo_files(folder)
+    # Demo accounts are reached through the demo selector, which DEMO_MODE gates.
+    # They must not also be reachable by password: this file is public, so a fixed
+    # one would hand the reviewer account to anyone who reads the repository.
+    # Nobody ever learns this value, so no password can match it.
+    unusable = hash_password(secrets.token_urlsafe(32))
     with Session() as db:
         if db.get(Business, "buyer"):
             return
@@ -148,7 +155,7 @@ def seed(folder):
                     id=bid,
                     name=name,
                     email=bid + "@demo.materialsetu.local",
-                    password_hash=hash_password("demo-account-no-password-login"),
+                    password_hash=unusable,
                     role=role,
                     city=city,
                     latitude=lat,
