@@ -12,7 +12,10 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "package": "in.materialsetu.app"
+      "package": "in.materialsetu.app",
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,6 +31,12 @@
       ],
       "expo-secure-store",
       "expo-document-picker"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "142f793e-5b83-49c3-a390-2bfc741d060a"
+      }
+    },
+    "owner": "dhruvil1309"
   }
 }
