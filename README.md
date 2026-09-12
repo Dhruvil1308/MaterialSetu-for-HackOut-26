@@ -28,6 +28,7 @@
 | :-- | :-- | :-- |
 | 🌐 **Website** | **[material-setu-for-hack-out-26-web.vercel.app](https://material-setu-for-hack-out-26-web.vercel.app/)** | Works on phone and laptop. Nothing to install. |
 | 🤖 **Android** | **[Download the APK](https://expo.dev/artifacts/eas/UUn2ivp5nFhgSdYC8ZpM7uh2oKTt9buEOXosXty9wwc.apk)** | Open on your phone and tap install. Allow "unknown sources". |
+| 🎬 **Demo video** | **[Watch the 95-second walkthrough](docs/demo-video.mp4)** | The real product, recorded end to end. Silent — voiceover script in [docs/demo-script.md](docs/demo-script.md). |
 | 🍎 **iOS** | [Simulator build](https://expo.dev/artifacts/eas/EHbcWS-7-LR0ZYtychLx4EAmJeA-a67DYmoR8ArQM1E.tar.gz) | Runs in Xcode's iOS Simulator. An iPhone build needs a paid Apple Developer account — that part is still pending. |
 
 > ⏳ **First load takes up to a minute.** The server sleeps when nobody is using it, so the app shows a "Waking the server…" screen while it starts. Everything after that is instant.
@@ -405,6 +406,7 @@ We would rather be trusted than impressive.
 | [docs/architecture.md](docs/architecture.md) | Scoring formula, state machine, pooling rules, data model |
 | [docs/demo.md](docs/demo.md) | Five-minute walkthrough to present |
 | [docs/validation.md](docs/validation.md) | What we tested, and the limits of those tests |
+| [docs/demo-script.md](docs/demo-script.md) | Voiceover script for the demo video, in English and Hindi |
 
 ---
 
