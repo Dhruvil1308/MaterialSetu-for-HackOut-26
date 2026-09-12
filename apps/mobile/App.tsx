@@ -79,7 +79,10 @@ function MaterialSetu() {
     [tab, setTab] = useState<Tab>("discover"),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [ready, setReady] = useState(false),
+    [waking, setWaking] = useState(false),
+    [bootError, setBootError] = useState("");
   const [data, setData] = useState(initial),
     [all, setAll] = useState<Listing[]>([]),
     [exchanges, setExchanges] = useState<Exchange[]>([]),
@@ -154,10 +157,13 @@ function MaterialSetu() {
     await find(r.user);
     setMessage("Signed in. Searches use your business location.");
   }
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    run(async () => {
+  async function boot() {
+    setBootError("");
+    setBusy(true);
+    // The API may be a free instance that sleeps; the first call can take most
+    // of a minute. Tell the user rather than showing an empty exchange.
+    const slow = setTimeout(() => setWaking(true), 2500);
+    try {
       await loadToken();
       const health = await api("/health");
       setDemo(health.demo);
@@ -175,7 +181,25 @@ function MaterialSetu() {
       }
       await refresh(u);
       await find(u);
-    });
+      setReady(true);
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : "";
+      // React Native reports an unreachable server as "Network request failed".
+      setBootError(
+        !detail || /network request failed|failed to fetch/i.test(detail)
+          ? "Could not reach the exchange."
+          : detail,
+      );
+    } finally {
+      clearTimeout(slow);
+      setWaking(false);
+      setBusy(false);
+    }
+  }
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    boot();
   }, []);
   function prepare(items: { listing_id: string; quantity: number }[]) {
     if (!user) {
@@ -276,6 +300,48 @@ function MaterialSetu() {
     });
   }
   const mine = all.filter((l) => l.seller_id === user?.id);
+  if (!ready)
+    return (
+      <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
+        <StatusBar style="dark" />
+        <View style={s.startup}>
+          <View style={s.startupMark}>
+            <Text style={s.startupMarkText}>M</Text>
+          </View>
+          <Text style={s.startupBrand}>MaterialSetu</Text>
+          <Text style={s.startupTagline}>THE MATERIAL EXCHANGE</Text>
+          {bootError ? (
+            <>
+              <Text style={s.startupFailed}>{bootError}</Text>
+              <Text style={s.startupHint}>
+                The exchange runs on a free server that sleeps when nobody is
+                using it. Waking it takes up to a minute, so this often works on
+                the second try.
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                style={s.startupRetry}
+                onPress={boot}
+              >
+                <Text style={s.startupRetryText}>Try again</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <ActivityIndicator color="#174b3a" style={{ marginTop: 4 }} />
+              <Text style={s.startupStatus}>
+                {waking ? "Waking the server…" : "Loading the exchange…"}
+              </Text>
+              <Text style={s.startupHint}>
+                {waking
+                  ? "Free hosting sleeps after a quiet spell. The first visit can take up to a minute; everything after it is quick."
+                  : "Fetching nearby materials and supplier evidence."}
+              </Text>
+            </>
+          )}
+        </View>
+      </SafeAreaView>
+    );
   return (
     <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
       <StatusBar style="dark" />
@@ -1110,7 +1176,12 @@ function MaterialCard({
       <View style={{ padding: 17 }}>
         <View style={s.between}>
           <Text style={s.small}>{label(l.grade)}</Text>
-          <Text style={s.trustBadge}>Trust {l.trust.score}/100</Text>
+          <Text
+            style={[s.trustBadge, l.trust.completed ? null : s.trustBadgeNew]}
+          >
+            Trust {l.trust.score}/100
+            {l.trust.completed ? "" : " · new"}
+          </Text>
         </View>
         <Text style={[s.cardTitle, { marginTop: 9 }]}>{l.title}</Text>
         <Text style={s.body}>{l.seller.name}</Text>
@@ -1543,6 +1614,57 @@ function OrderItem({
 }
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#f6f8f7" },
+  startup: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
+  startupMark: {
+    width: 58,
+    height: 58,
+    borderRadius: 16,
+    backgroundColor: "#123d31",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  startupMarkText: { color: "#fff", fontSize: 26, fontWeight: "800" },
+  startupBrand: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#123d31",
+    marginTop: 16,
+  },
+  startupTagline: {
+    fontSize: 10,
+    letterSpacing: 2.2,
+    color: "#6e7d75",
+    marginTop: 4,
+    marginBottom: 26,
+  },
+  startupStatus: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#123d31",
+    marginTop: 18,
+    marginBottom: 6,
+  },
+  startupFailed: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#a2372a",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  startupHint: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#6e7d75",
+    textAlign: "center",
+  },
+  startupRetry: {
+    marginTop: 20,
+    backgroundColor: "#174b3a",
+    paddingVertical: 12,
+    paddingHorizontal: 26,
+    borderRadius: 10,
+  },
+  startupRetryText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   flex: { flex: 1 },
   row: { flexDirection: "row", gap: 12 },
   between: {
@@ -1733,6 +1855,7 @@ const s = StyleSheet.create({
     padding: 5,
     borderRadius: 5,
   },
+  trustBadgeNew: { color: "#7a6a3f", backgroundColor: "#f3f1ea" },
   cardTitle: {
     fontSize: 17,
     lineHeight: 23,

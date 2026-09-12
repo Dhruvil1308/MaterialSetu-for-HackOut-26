@@ -70,6 +70,9 @@ function App() {
     [busy, setBusy] = useState(false),
     [filters, setFilters] = useState(false),
     [menu, setMenu] = useState(false);
+  const [ready, setReady] = useState(false),
+    [waking, setWaking] = useState(false),
+    [bootError, setBootError] = useState("");
   const [query, setQuery] = useState("50 kg plastic"),
     [mat, setMat] = useState(""),
     [radius, setRadius] = useState(30),
@@ -150,10 +153,13 @@ function App() {
     });
     if (seq === searchSeq.current) setData(result);
   }
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-    run(async () => {
+  async function boot() {
+    setBootError("");
+    setBusy(true);
+    // A sleeping free instance can take most of a minute to answer the first
+    // request. Say so rather than showing an empty marketplace.
+    const slow = setTimeout(() => setWaking(true), 2500);
+    try {
       const h = await api("/health");
       setDemo(h.demo);
       setTaxonomy(await api("/taxonomy"));
@@ -167,7 +173,26 @@ function App() {
       }
       await search();
       await refresh();
-    });
+      setReady(true);
+    } catch (e) {
+      const detail = (e as Error).message;
+      // fetch() reports a dead or unreachable server as "Failed to fetch",
+      // which means nothing to the person reading it.
+      setBootError(
+        /failed to fetch|network|load failed/i.test(detail)
+          ? "Could not reach the exchange."
+          : detail,
+      );
+    } finally {
+      clearTimeout(slow);
+      setWaking(false);
+      setBusy(false);
+    }
+  }
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    boot();
   }, []);
   useEffect(() => {
     if (initialized.current)
@@ -217,6 +242,8 @@ function App() {
   const mine = all.filter((l) => l.seller_id === user?.id);
   const available = data.listings.reduce((sum, l) => sum + l.available, 0);
   const isOwn = selected?.seller_id === user?.id;
+  if (!ready)
+    return <Startup waking={waking} error={bootError} onRetry={boot} />;
   return (
     <div className="app-shell">
       <aside className={`sidebar ${menu ? "open" : ""}`}>
@@ -627,7 +654,13 @@ function App() {
                     </div>
                     <span className="sort-label">Nearest first</span>
                   </div>
-                  {!data.listings.length ? (
+                  {busy ? (
+                    <div className="listing-grid">
+                      {[0, 1, 2, 3].map((i) => (
+                        <SkeletonCard key={i} />
+                      ))}
+                    </div>
+                  ) : !data.listings.length ? (
                     <Empty
                       title="No materials found nearby"
                       text={
@@ -1358,9 +1391,17 @@ function ListingCard({ l, onClick }: { l: Listing; onClick: () => void }) {
       <div className="listing-body">
         <div className="listing-meta">
           <span>{label(l.grade)}</span>
-          <span className="trust-badge">
+          <span
+            className={`trust-badge ${l.trust.completed ? "" : "untested"}`}
+            title={
+              l.trust.completed
+                ? `${l.trust.completed} confirmed handovers`
+                : "No completed exchanges yet. A low score means little evidence so far, not a bad supplier."
+            }
+          >
             <ShieldCheck size={13} />
             {l.trust.score}/100
+            {!l.trust.completed && <small>new</small>}
           </span>
         </div>
         <h3>{l.title}</h3>
@@ -1907,4 +1948,68 @@ function ReviewCard({ title, subtitle, onOpen, onDecide }: any) {
   );
 }
 
+function Startup({
+  waking,
+  error,
+  onRetry,
+}: {
+  waking: boolean;
+  error: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="startup">
+      <div className="startup-card">
+        <span className="startup-mark">
+          <Layers3 size={30} />
+        </span>
+        <h1>
+          Material<span className="brand-light">Setu</span>
+        </h1>
+        <p className="startup-tagline">THE MATERIAL EXCHANGE</p>
+        {error ? (
+          <>
+            <p className="startup-status failed" role="alert">
+              {error}
+            </p>
+            <p className="startup-hint">
+              The exchange runs on a free server that sleeps when nobody is
+              using it. Waking it takes up to a minute, so this often works on
+              the second try.
+            </p>
+            <button className="primary" onClick={onRetry}>
+              <RefreshCw size={16} /> Try again
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="startup-bar" aria-hidden="true">
+              <span />
+            </div>
+            <p className="startup-status" role="status">
+              {waking ? "Waking the server…" : "Loading the exchange…"}
+            </p>
+            <p className="startup-hint">
+              {waking
+                ? "Free hosting sleeps after a quiet spell. The first visit can take up to a minute; everything after it is quick."
+                : "Fetching nearby materials and supplier evidence."}
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+function SkeletonCard() {
+  return (
+    <div className="listing-card skeleton" aria-hidden="true">
+      <span className="skeleton-banner" />
+      <div className="listing-body">
+        <span className="skeleton-line short" />
+        <span className="skeleton-line" />
+        <span className="skeleton-line medium" />
+      </div>
+    </div>
+  );
+}
 createRoot(document.getElementById("root")!).render(<App />);
