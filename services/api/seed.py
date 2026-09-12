@@ -174,6 +174,7 @@ def seed(folder):
                         if bid in ["s1", "s2"]
                         else ""
                     ),
+                    kind="buyer" if bid == "buyer" else ("both" if role == "member" else "both"),
                     is_demo=True,
                 )
             )

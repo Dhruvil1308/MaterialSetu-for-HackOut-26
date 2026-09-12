@@ -373,3 +373,46 @@ def test_model_output_is_validated_against_the_taxonomy(client):
     assert ai._clean_number(1.5, "piece") is None       # pallets are whole
     assert ai._clean_number(True, "kg") is None          # bools are not quantities
     assert ai._clean_number(12.3456, "kg") == 12.346
+
+
+def test_an_account_chooses_what_it_came_here_to_do(client):
+    """Buyer, supplier or both is picked at registration and changeable after."""
+    email = f"{uuid.uuid4().hex}@example.test"
+    r = client.post(
+        "/api/auth/register",
+        json={
+            "email": email,
+            "password": "a-long-enough-password",
+            "name": "Role Test Works",
+            "kind": "buyer",
+            "city": "Mehsana",
+            "latitude": 23.588,
+            "longitude": 72.369,
+        },
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["user"]["kind"] == "buyer"
+    head = {"Authorization": "Bearer " + r.json()["token"]}
+
+    # A buyer-only account is told why it cannot list, not handed a 500.
+    r = client.post(
+        "/api/listings",
+        headers=head,
+        json={"title": "Spare film", "material_id": "ldpe", "quantity": 5, "price": 10},
+    )
+    assert r.status_code == 403, r.text
+    assert "buy" in r.json()["detail"]
+
+    # Businesses that end up with surplus of their own can say so.
+    r = client.post("/api/me/kind", headers=head, json={"kind": "both"})
+    assert r.status_code == 200, r.text
+    assert r.json()["kind"] == "both"
+    r = client.post(
+        "/api/listings",
+        headers=head,
+        json={"title": "Spare film", "material_id": "ldpe", "quantity": 5, "price": 10},
+    )
+    assert r.status_code == 200, r.text
+
+    # Nothing outside the three is accepted.
+    assert client.post("/api/me/kind", headers=head, json={"kind": "admin"}).status_code == 422

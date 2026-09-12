@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 730" role="img" aria-label="MaterialSetu">
+  <title>MaterialSetu</title>
+  <g fill="#FFFFFF">
+    <!-- the M: two uprights meeting in a deep V -->
+    <path d="M125 72 h96 L400 352 L579 72 h96 v600 h-92 V200 L400 470 L217 200 v472 H125 Z"/>
+    <!-- the setu: a shallow arch springing from the baseline, crossing the M -->
+    <path d="M125 672 a275 232 0 0 1 550 0 h-92 a183 154 0 0 0 -366 0 Z"/>
+  </g>
+</svg>

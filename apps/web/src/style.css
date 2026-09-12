@@ -2073,3 +2073,61 @@ footer span {
     animation: none;
   }
 }
+
+/* ---- choosing what you came here to do ---------------------------------- */
+.kind-choice {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+  margin: 4px 0 18px;
+}
+.kind-choice button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  text-align: left;
+  padding: 13px 13px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  background: var(--card);
+  color: var(--ink-2);
+  transition: border-color 0.14s, background 0.14s, color 0.14s;
+}
+.kind-choice button:hover {
+  border-color: var(--pine-2);
+}
+.kind-choice button.selected {
+  border-color: var(--pine);
+  background: var(--pine-wash);
+  color: var(--pine);
+  box-shadow: inset 0 0 0 1px var(--pine);
+}
+.kind-choice svg {
+  color: var(--pine-2);
+}
+.kind-choice b {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.kind-choice button.selected b {
+  color: var(--pine);
+}
+.kind-choice span {
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+@media (max-width: 560px) {
+  .kind-choice {
+    grid-template-columns: 1fr;
+  }
+  .kind-choice button {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+  .kind-choice span {
+    display: none;
+  }
+}

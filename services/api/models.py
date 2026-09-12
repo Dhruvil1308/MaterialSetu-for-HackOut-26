@@ -86,6 +86,9 @@ class Business(Base):
     email: Mapped[str] = mapped_column(String, unique=True)
     password_hash: Mapped[str] = mapped_column(String)
     role: Mapped[str] = mapped_column(String, default="member")
+    # What this business came here to do. Reviewers are made by an operator, so
+    # this is never how someone becomes staff.
+    kind: Mapped[str] = mapped_column(String, default="both")
     city: Mapped[str] = mapped_column(String)
     latitude: Mapped[float] = mapped_column(Float)
     longitude: Mapped[float] = mapped_column(Float)

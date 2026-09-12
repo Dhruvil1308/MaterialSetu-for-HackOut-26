@@ -9,6 +9,8 @@ export type User = {
   email: string;
   gstin: string;
   role: string;
+  /** What the business came here to do. Reviewers are made by an operator. */
+  kind: "buyer" | "supplier" | "both";
 };
 export type Trust = {
   score: number;

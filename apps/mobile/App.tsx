@@ -75,6 +75,11 @@ const initial: SearchResult = {
   pool_note: "",
 };
 type Tab = "discover" | "pools" | "exchanges" | "supply" | "account";
+const KINDS = [
+  { id: "buyer", icon: "⌕", title: "I need material", blurb: "Search nearby surplus." },
+  { id: "supplier", icon: "+", title: "I have surplus", blurb: "List what you spare." },
+  { id: "both", icon: "⇄", title: "Both", blurb: "Buy and sell." },
+];
 export default function App() {
   return (
     <SafeAreaProvider>
@@ -167,6 +172,7 @@ function MaterialSetu() {
     setUser(r.user);
     setGst(r.user.gstin);
     setSheet(null);
+    setTab(r.user.kind === "supplier" ? "supply" : "discover");
     await refresh(r.user);
     await find(r.user);
     setMessage("Signed in. Searches use your business location.");
@@ -391,20 +397,36 @@ function MaterialSetu() {
         </View>
       </SafeAreaView>
     );
+  const kind = user?.kind ?? "buyer";
+  const buys = !user || kind === "buyer" || kind === "both";
+  const sells = !!user && (kind === "supplier" || kind === "both");
+  // A tab this account cannot use falls back rather than rendering empty.
+  const hidden =
+    (!buys && (tab === "discover" || tab === "pools")) ||
+    (!sells && tab === "supply");
+  const view: Tab = hidden ? (buys ? "discover" : "exchanges") : tab;
   return (
     <SafeAreaView style={s.screen} edges={["top", "bottom"]}>
       <StatusBar style="dark" />
       <View style={s.header}>
-        <View style={s.logo}>
-          <Text style={s.logoText}>M</Text>
-        </View>
+        <Image
+          source={require("./assets/logo.png")}
+          style={s.logo}
+          accessibilityIgnoresInvertColors
+        />
         <View style={{ flex: 1 }}>
           <Text style={s.brand}>MaterialSetu</Text>
           <Text style={s.small}>
             {user
               ? user.role === "admin"
                 ? "Reviewer · use the website to review"
-                : `${user.city} · buying and selling`
+                : `${user.city} · ${
+                    user.kind === "buyer"
+                      ? "buying"
+                      : user.kind === "supplier"
+                        ? "supplying"
+                        : "buying and supplying"
+                  }`
               : "Mehsana · Local material exchange"}
           </Text>
         </View>
@@ -469,11 +491,11 @@ function MaterialSetu() {
         }
       >
         <Feedback error={error} message={message} />
-        {(tab === "discover" || tab === "pools") && (
+        {(view === "discover" || view === "pools") && (
           <>
             <Text style={s.eyebrow}>LOCAL SUPPLY. NEW POSSIBILITIES.</Text>
             <Text style={s.hero}>
-              {tab === "pools"
+              {view === "pools"
                 ? "A little from each.\nEnough for you."
                 : "The right material.\nCloser than you think."}
             </Text>
@@ -573,26 +595,26 @@ function MaterialSetu() {
             <View style={s.switchRow}>
               <Pressable
                 onPress={() => setTab("discover")}
-                style={[s.switch, tab === "discover" && s.switchActive]}
+                style={[s.switch, view === "discover" && s.switchActive]}
               >
                 <Text
-                  style={tab === "discover" ? s.switchTextActive : s.switchText}
+                  style={view === "discover" ? s.switchTextActive : s.switchText}
                 >
                   Listings · {data.listings.length}
                 </Text>
               </Pressable>
               <Pressable
                 onPress={() => setTab("pools")}
-                style={[s.switch, tab === "pools" && s.switchActive]}
+                style={[s.switch, view === "pools" && s.switchActive]}
               >
                 <Text
-                  style={tab === "pools" ? s.switchTextActive : s.switchText}
+                  style={view === "pools" ? s.switchTextActive : s.switchText}
                 >
                   Supply plans · {data.pools.length}
                 </Text>
               </Pressable>
             </View>
-            {tab === "discover" && (
+            {view === "discover" && (
               <>
                 {data.clarification && (
                   <Text style={s.message}>{data.clarification}</Text>
@@ -613,7 +635,7 @@ function MaterialSetu() {
                 )}
               </>
             )}
-            {tab === "pools" && (
+            {view === "pools" && (
               <>
                 {data.pools.length === 0 ? (
                   <Empty
@@ -645,7 +667,7 @@ function MaterialSetu() {
             )}
           </>
         )}
-        {tab === "supply" && (
+        {view === "supply" && (
           <>
             <Heading eyebrow="YOUR MATERIALS" title="Make surplus useful." />
             <Text style={s.body}>
@@ -679,7 +701,7 @@ function MaterialSetu() {
             )}
           </>
         )}
-        {tab === "exchanges" && (
+        {view === "exchanges" && (
           <>
             <Heading eyebrow="MOVE MATERIALS FORWARD" title="Your exchanges." />
             {!user ? (
@@ -743,7 +765,7 @@ function MaterialSetu() {
             )}
           </>
         )}
-        {tab === "account" && (
+        {view === "account" && (
           <>
             <Heading
               eyebrow="CONFIDENCE THROUGH EVIDENCE"
@@ -762,6 +784,42 @@ function MaterialSetu() {
                     {user.email} · {user.city}
                   </Text>
                   {ownTrust && <TrustCard trust={ownTrust} />}
+                </View>
+                <View style={s.card}>
+                  <Text style={s.cardTitle}>What you use this for</Text>
+                  <Text style={s.body}>
+                    This decides what you see. Change it whenever your business
+                    does.
+                  </Text>
+                  <View style={s.kindRow}>
+                    {KINDS.map((k) => (
+                      <Pressable
+                        key={k.id}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: kind === k.id }}
+                        disabled={busy || user.role === "admin"}
+                        onPress={() =>
+                          run(async () => {
+                            await api("/me/kind", {
+                              method: "POST",
+                              body: JSON.stringify({ kind: k.id }),
+                            });
+                            setUser(await api("/me"));
+                            setMessage(`Your account is set to: ${k.title}.`);
+                          })
+                        }
+                        style={[s.kindCard, kind === k.id && s.kindCardOn]}
+                      >
+                        <Text style={[s.kindIcon, kind === k.id && s.kindTextOn]}>
+                          {k.icon}
+                        </Text>
+                        <Text style={[s.kindTitle, kind === k.id && s.kindTextOn]}>
+                          {k.title}
+                        </Text>
+                        <Text style={s.kindBlurb}>{k.blurb}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
                 <View style={s.card}>
                   <Text style={s.cardTitle}>GST review</Text>
@@ -827,22 +885,26 @@ function MaterialSetu() {
       <View style={s.bottomNav}>
         {(
           [
-            ["discover", "⌕", "Discover"],
-            ["pools", "▤", "Pools"],
-            ["exchanges", "⇄", "Exchanges"],
-            ["supply", "+", "Supply"],
+            ...(buys
+              ? ([
+                  ["discover", "⌕", "Discover"],
+                  ["pools", "▤", "Pools"],
+                ] as [Tab, string, string][])
+              : []),
+            ["exchanges", "⇄", sells && !buys ? "Requests" : "Exchanges"],
+            ...(sells ? ([["supply", "+", "Supply"]] as [Tab, string, string][]) : []),
             ["account", "◎", "Account"],
           ] as [Tab, string, string][]
         ).map(([id, icon, title]) => (
           <Pressable
             key={id}
             accessibilityRole="tab"
-            accessibilityState={{ selected: tab === id }}
+            accessibilityState={{ selected: view === id }}
             onPress={() => setTab(id)}
             style={s.navItem}
           >
-            <Text style={[s.navIcon, tab === id && s.navSelected]}>{icon}</Text>
-            <Text style={[s.navText, tab === id && s.navSelected]}>
+            <Text style={[s.navIcon, view === id && s.navSelected]}>{icon}</Text>
+            <Text style={[s.navText, view === id && s.navSelected]}>
               {title}
             </Text>
           </Pressable>
@@ -1360,12 +1422,33 @@ function LoginForm({
     [name, setName] = useState(""),
     [city, setCity] = useState("Mehsana"),
     [lat, setLat] = useState("23.588"),
-    [lon, setLon] = useState("72.369");
+    [lon, setLon] = useState("72.369"),
+    [kind, setKind] = useState("both");
   return (
     <>
       <Text style={s.hero}>{reg ? "Join the exchange." : "Welcome back."}</Text>
       {reg && (
         <>
+          <Text style={s.inputLabel}>What do you come here to do?</Text>
+          <View style={s.kindRow}>
+            {KINDS.map((k) => (
+              <Pressable
+                key={k.id}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: kind === k.id }}
+                onPress={() => setKind(k.id)}
+                style={[s.kindCard, kind === k.id && s.kindCardOn]}
+              >
+                <Text style={[s.kindIcon, kind === k.id && s.kindTextOn]}>
+                  {k.icon}
+                </Text>
+                <Text style={[s.kindTitle, kind === k.id && s.kindTextOn]}>
+                  {k.title}
+                </Text>
+                <Text style={s.kindBlurb}>{k.blurb}</Text>
+              </Pressable>
+            ))}
+          </View>
           <Input label="Business name" value={name} onChangeText={setName} />
           <Input label="City" value={city} onChangeText={setCity} />
           <Input
@@ -1400,6 +1483,7 @@ function LoginForm({
                   email,
                   password,
                   name,
+                  kind,
                   city,
                   latitude: Number(lat),
                   longitude: Number(lon),
@@ -1767,15 +1851,23 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#e4e7e1",
   },
-  logo: {
-    backgroundColor: "#0f3d31",
-    width: 35,
-    height: 37,
-    borderRadius: 9,
+  logo: { width: 36, height: 38, resizeMode: "contain" },
+  kindRow: { gap: 8, marginBottom: 14 },
+  kindCard: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#e4e7e1",
+    borderRadius: 12,
+    backgroundColor: "white",
   },
-  logoText: { color: "white", fontWeight: "700", fontSize: 23 },
+  kindCardOn: { borderColor: "#0f3d31", backgroundColor: "#eef4f1" },
+  kindIcon: { fontSize: 17, color: "#5c6b63", width: 20, textAlign: "center" },
+  kindTitle: { fontSize: 14, fontWeight: "600", color: "#16211c" },
+  kindBlurb: { fontSize: 11.5, color: "#5c6b63", flex: 1, textAlign: "right" },
+  kindTextOn: { color: "#0f3d31" },
   brand: {
     fontSize: 22,
     fontWeight: "700",

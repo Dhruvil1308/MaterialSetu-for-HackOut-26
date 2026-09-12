@@ -224,6 +224,18 @@ function App() {
       await Promise.all([refresh(), search()]);
     });
   }, [user]);
+  /** Keeps you where you were, unless this account cannot go there. */
+  function home(who: any, current: Tab): Tab {
+    const k = who.kind ?? "both";
+    const canBuy = k === "buyer" || k === "both";
+    const canSell = k === "supplier" || k === "both";
+    const blocked =
+      (!canBuy && current === "market") ||
+      (!canSell && current === "listings") ||
+      (who.role !== "admin" && current === "admin");
+    if (!blocked) return current;
+    return who.role === "admin" ? "admin" : canBuy ? "market" : "listings";
+  }
   async function signIn(result: any) {
     setExchanges([]);
     setTrust(null);
@@ -231,6 +243,7 @@ function App() {
     setDisputes([]);
     localStorage.setItem("materialsetu-token", result.token);
     setUser(result.user);
+    setTab((current) => home(result.user, current));
     setModal(null);
     setNotice("Signed in. Your business location is used for nearby matching.");
   }
@@ -262,6 +275,10 @@ function App() {
       setNotice("Exchange updated.");
     });
   }
+  // A visitor is treated as a buyer: browsing is the first thing anyone does.
+  const kind = user?.kind ?? "buyer";
+  const buys = !user || kind === "buyer" || kind === "both";
+  const sells = !!user && (kind === "supplier" || kind === "both");
   const mine = all.filter((l) => l.seller_id === user?.id);
   const available = data.listings.reduce((sum, l) => sum + l.available, 0);
   const isOwn = selected?.seller_id === user?.id;
@@ -284,7 +301,7 @@ function App() {
           }}
         >
           <span className="brand-icon">
-            <Layers3 size={25} />
+            <img src="/logo-white.svg" alt="" width={23} height={21} />
           </span>
           <span>
             Material<span className="brand-light">Setu</span>
@@ -299,7 +316,13 @@ function App() {
               {user
                 ? user.role === "admin"
                   ? "Reviewer · checks GST and documents"
-                  : `${user.city} · buying and selling`
+                  : `${user.city} · ${
+                      kind === "buyer"
+                        ? "buying"
+                        : kind === "supplier"
+                          ? "supplying"
+                          : "buying and supplying"
+                    }`
                 : "Mehsana, Gujarat"}
             </small>
           </div>
@@ -308,9 +331,13 @@ function App() {
         <nav>
           {(
             [
-              ["market", LayoutGrid, "Find materials"],
-              ["exchanges", ArrowLeftRight, "Exchanges"],
-              ["listings", Package, "My listings"],
+              ...(sells ? [["listings", Package, "My listings"]] : []),
+              ...(buys ? [["market", LayoutGrid, "Find materials"]] : []),
+              [
+                "exchanges",
+                ArrowLeftRight,
+                sells && !buys ? "Requests" : "Exchanges",
+              ],
               ["trust", ShieldCheck, "Trust & verification"],
               ...(user?.role === "admin"
                 ? [["admin", FileCheck2, "Review centre"]]
@@ -709,10 +736,28 @@ function App() {
                     </div>
                   ) : !data.listings.length ? (
                     <Empty
-                      title="No materials found nearby"
+                      title={
+                        all.length
+                          ? "No materials found nearby"
+                          : "Nothing listed yet"
+                      }
                       text={
-                        data.clarification ||
-                        "Try another material, a wider radius or a different intended use."
+                        all.length
+                          ? data.clarification ||
+                            "Try another material, a wider radius or a different intended use."
+                          : "The exchange is new. List your own surplus and buyers nearby will find it."
+                      }
+                      action={
+                        all.length
+                          ? null
+                          : user
+                            ? sells
+                              ? { label: "List material", run: () => setTab("listings") }
+                              : {
+                                  label: "I have surplus too",
+                                  run: () => setTab("trust"),
+                                }
+                            : { label: "Create an account", run: () => setModal("login") }
                       }
                     />
                   ) : (
@@ -913,6 +958,44 @@ function App() {
                 <SignIn onClick={() => setModal("login")} />
               ) : (
                 <div className="trust-layout">
+                  <section className="panel">
+                    <h2>What you use MaterialSetu for</h2>
+                    <p>
+                      This decides what you see. Change it whenever your
+                      business does.
+                    </p>
+                    <div className="kind-choice" role="radiogroup">
+                      {KINDS.map((k) => (
+                        <button
+                          key={k.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={kind === k.id}
+                          disabled={busy || user.role === "admin"}
+                          className={kind === k.id ? "selected" : ""}
+                          onClick={() =>
+                            run(async () => {
+                              await api("/me/kind", {
+                                method: "POST",
+                                body: JSON.stringify({ kind: k.id }),
+                              });
+                              setUser(await api("/me"));
+                              setNotice(`Your account is set to: ${k.title}.`);
+                            })
+                          }
+                        >
+                          <k.icon size={19} />
+                          <b>{k.title}</b>
+                          <span>{k.blurb}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {user.role === "admin" && (
+                      <p className="muted">
+                        Reviewer accounts check evidence and do not trade.
+                      </p>
+                    )}
+                  </section>
                   <section className="panel">
                     {trust && <TrustPanel trust={trust} />}
                     <p className="muted">
@@ -1501,12 +1584,17 @@ function Title({ eyebrow, title, subtitle }: any) {
     </div>
   );
 }
-function Empty({ title, text }: any) {
+function Empty({ title, text, action }: any) {
   return (
     <div className="empty">
       <Package size={32} />
       <h3>{title}</h3>
       <p>{text}</p>
+      {action && (
+        <button className="primary" onClick={action.run}>
+          {action.label}
+        </button>
+      )}
     </div>
   );
 }
@@ -1700,8 +1788,29 @@ function Modal({ title, children, onClose }: any) {
     </dialog>
   );
 }
+const KINDS = [
+  {
+    id: "buyer",
+    icon: Search,
+    title: "I need material",
+    blurb: "Search nearby surplus and combine it into one order.",
+  },
+  {
+    id: "supplier",
+    icon: Package,
+    title: "I have surplus",
+    blurb: "List what you have spare and build a trusted record.",
+  },
+  {
+    id: "both",
+    icon: ArrowLeftRight,
+    title: "Both",
+    blurb: "Buy what you need and sell what you do not.",
+  },
+];
 function LoginForm({ submit, busy }: any) {
   const [register, setRegister] = useState(false);
+  const [kind, setKind] = useState("both");
   return (
     <form
       onSubmit={(e) => {
@@ -1712,6 +1821,7 @@ function LoginForm({ submit, busy }: any) {
           register
             ? {
                 ...d,
+                kind,
                 latitude: Number(d.latitude),
                 longitude: Number(d.longitude),
               }
@@ -1721,11 +1831,27 @@ function LoginForm({ submit, busy }: any) {
     >
       <p>
         {register
-          ? "Create a business account to buy and supply materials."
+          ? "Tell us what you came here to do. You can change it later."
           : "Welcome back. Sign in to your business account."}
       </p>
       {register && (
         <>
+          <div className="kind-choice" role="radiogroup" aria-label="Account type">
+            {KINDS.map((k) => (
+              <button
+                key={k.id}
+                type="button"
+                role="radio"
+                aria-checked={kind === k.id}
+                className={kind === k.id ? "selected" : ""}
+                onClick={() => setKind(k.id)}
+              >
+                <k.icon size={19} />
+                <b>{k.title}</b>
+                <span>{k.blurb}</span>
+              </button>
+            ))}
+          </div>
           <Field label="Business name">
             <input name="name" required minLength={2} />
           </Field>
@@ -2165,7 +2291,7 @@ function Startup({
     <div className="startup">
       <div className="startup-card">
         <span className="startup-mark">
-          <Layers3 size={30} />
+          <img src="/logo-white.svg" alt="" width={30} height={27} />
         </span>
         <h1>
           Material<span className="brand-light">Setu</span>

@@ -45,11 +45,11 @@ services:
       - key: CORS_ORIGINS
         sync: false
 
-      # 1 enables the fictional demo accounts and their passwordless quick login,
-      # which is what the walkthrough in docs/demo.md relies on. Set it to 0 for
-      # anything resembling a pilot.
+      # 0 keeps the exchange real: no fictional businesses, no demo account
+      # switcher, no seeded listings. Set it to 1 only on a throwaway database
+      # where you want the walkthrough in docs/demo.md to work.
       - key: DEMO_MODE
-        value: "1"
+        value: "0"
 
       # Optional. Enables multilingual search and photo category suggestions;
       # without it the API falls back to keyword rules. Server-side only - it must

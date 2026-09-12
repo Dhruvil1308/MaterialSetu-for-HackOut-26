@@ -9,6 +9,8 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "materialsetu-qa-"));
 const shots = path.join(root, "docs/screenshots");
 fs.mkdirSync(shots, { recursive: true });
 const children = [];
+const API_PORT = process.env.API_PORT || "8000";
+const API = `http://localhost:${API_PORT}`;
 function start(command, args, cwd, env = {}) {
   const child = spawn(command, args, {
     cwd,
@@ -40,7 +42,7 @@ async function ready(url) {
   try {
     start(
       process.env.PYTHON || "python3",
-      ["-m", "uvicorn", "main:app", "--port", "8000"],
+      ["-m", "uvicorn", "main:app", "--port", API_PORT],
       path.join(root, "services/api"),
       {
         DEMO_MODE: "1",
@@ -54,7 +56,7 @@ async function ready(url) {
       path.join(root, "apps/web"),
     );
     await Promise.all([
-      ready("http://localhost:8000/api/health"),
+      ready(`${API}/api/health`),
       ready("http://localhost:5173"),
     ]);
     let launch = { headless: true };
@@ -107,7 +109,7 @@ async function ready(url) {
       localStorage.getItem("materialsetu-token"),
     );
     const orders = await (
-      await fetch("http://localhost:8000/api/exchanges", {
+      await fetch(`${API}/api/exchanges`, {
         headers: { Authorization: "Bearer " + buyerToken },
       })
     ).json();

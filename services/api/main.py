@@ -91,7 +91,13 @@ def public_business(b):
 
 
 def my_business(b):
-    return {**public_business(b), "email": b.email, "gstin": b.gstin, "role": b.role}
+    return {
+        **public_business(b),
+        "email": b.email,
+        "gstin": b.gstin,
+        "role": b.role,
+        "kind": b.kind,
+    }
 
 
 def create_session(db, b):
@@ -376,6 +382,7 @@ def demo_login(data: DemoLogin, db=Depends(db_session)):
 
 
 class Register(BaseModel):
+    kind: Literal["buyer", "supplier", "both"] = "both"
     name: str = Field(min_length=2, max_length=120)
     email: str = Field(min_length=5, max_length=150)
     password: str = Field(min_length=10, max_length=200)
@@ -393,6 +400,7 @@ def register(data: Register, db=Depends(db_session)):
         name=data.name.strip(),
         email=data.email.lower().strip(),
         password_hash=hash_password(data.password),
+        kind=data.kind,
         city=data.city,
         latitude=data.latitude,
         longitude=data.longitude,
@@ -573,6 +581,8 @@ class NewListing(BaseModel):
 
 @app.post("/api/listings")
 def add_listing(data: NewListing, user=Depends(current), db=Depends(db_session)):
+    if user.kind == "buyer":
+        fail(403, "This account is set up to buy. Add supplying from your account page.")
     m = material(data.material_id)
     if not m:
         fail(422, "Choose a supported material.")
@@ -649,6 +659,19 @@ async def classify_image(file: UploadFile = File(...), user=Depends(current)):
 
 class GST(BaseModel):
     gstin: str
+
+
+class Kind(BaseModel):
+    kind: Literal["buyer", "supplier", "both"]
+
+
+@app.post("/api/me/kind")
+def set_kind(data: Kind, user=Depends(current), db=Depends(db_session)):
+    """A business that starts out buying often ends up with surplus of its own."""
+    user.kind = data.kind
+    db.add(user)
+    db.commit()
+    return my_business(user)
 
 
 @app.post("/api/me/gst")
