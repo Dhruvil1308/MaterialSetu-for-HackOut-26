@@ -5,7 +5,8 @@
 # service's Environment page, because they are secrets or depend on the URLs Render
 # hands out after the first deploy.
 #
-# This deploys the API and the website. The mobile APK is built separately with EAS.
+# This deploys the API only. The website is hosted on Vercel (see vercel.json),
+# and the mobile APK is built separately with EAS.
 
 services:
   - type: web
@@ -57,19 +58,3 @@ services:
       - key: UPLOAD_DIR
         value: ./uploads
 
-  # The React website. Static files, so it does not sleep the way the free API
-  # service does, and it costs nothing.
-  - type: web
-    name: materialsetu-web
-    runtime: static
-    # npm workspaces: install and build from the repository root, publish the
-    # bundle Vite writes.
-    buildCommand: npm ci && npm run build
-    staticPublishPath: apps/web/dist
-    envVars:
-      # The API's public address with /api on the end, for example
-      # https://materialsetu-api.onrender.com/api. Vite reads this at BUILD time,
-      # so changing it needs a redeploy, not just a restart. Without it the built
-      # site calls /api on its own origin, where nothing is listening.
-      - key: VITE_API_URL
-        sync: false
