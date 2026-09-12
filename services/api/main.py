@@ -292,6 +292,7 @@ def listing_json(db, l, origin=None):
 
 @asynccontextmanager
 async def lifespan(app):
+    print("CORS allowed origins: " + (", ".join(ORIGINS) or "(none)"), flush=True)
     ensure_schema()
     Base.metadata.create_all(engine)
     if DEMO:
@@ -301,13 +302,30 @@ async def lifespan(app):
     yield
 
 
+def allowed_origins():
+    """Origins permitted to call this API from a browser.
+
+    A browser sends its Origin with no trailing slash, no quotes and no spaces,
+    so an entry carrying any of those can never match and the failure looks like
+    the API is down rather than misconfigured. Accept the forms a value pasted
+    into a hosting dashboard actually takes.
+    """
+    raw = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081",
+    )
+    return [
+        cleaned
+        for entry in raw.split(",")
+        if (cleaned := entry.strip().strip("\"'").rstrip("/"))
+    ]
+
+
+ORIGINS = allowed_origins()
 app = FastAPI(title="MaterialSetu API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv(
-        "CORS_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8081",
-    ).split(","),
+    allow_origins=ORIGINS,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PATCH"],
     allow_headers=["Authorization", "Content-Type"],
