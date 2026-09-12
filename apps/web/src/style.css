@@ -1942,3 +1942,165 @@ footer span:last-child {
   color: #47584e;
   margin: 10px 0 0;
 }
+
+/* ---- review centre ------------------------------------------------------ */
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.admin-stat {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+/* Only work that is actually waiting gets the eye. */
+.admin-stat.needs {
+  border-color: #d9b88a;
+  background: #fdf8f0;
+}
+.admin-stat strong {
+  display: block;
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--dark);
+}
+.admin-stat.needs strong {
+  color: #8a5a0b;
+}
+.admin-stat span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.admin-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 17px;
+  margin: 26px 0 0;
+}
+.admin-heading .count {
+  background: #8a5a0b;
+  color: #fff;
+  font-size: 11px;
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+.review-kind {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin-bottom: 8px;
+}
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.admin-table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 640px;
+  font-size: 13px;
+}
+.admin-table th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #f7faf8;
+  white-space: nowrap;
+}
+.admin-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid #eef3ef;
+  vertical-align: top;
+}
+.admin-table tr:last-child td {
+  border-bottom: 0;
+}
+.admin-table small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  max-width: 230px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.role-tag {
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: #edf5ef;
+  color: var(--green);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: 6px;
+}
+.role-tag.demo {
+  background: #f3f1ea;
+  color: #7a6a3f;
+}
+.gst {
+  display: inline-block;
+  font-size: 11px;
+  text-transform: capitalize;
+  border-radius: 3px;
+  padding: 2px 7px;
+  background: #f1f4f2;
+  color: var(--muted);
+}
+.gst.reviewed,
+.gst.approved {
+  background: #e4f1e8;
+  color: #2c6a4c;
+}
+.gst.pending {
+  background: #fdf3e3;
+  color: #8a5a0b;
+}
+.gst.rejected {
+  background: #fbeceb;
+  color: #a2372a;
+}
+.decisions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  overflow: hidden;
+}
+.decisions li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid #eef3ef;
+  font-size: 13px;
+}
+.decisions li:last-child {
+  border-bottom: 0;
+}
+.decisions .reason {
+  color: var(--muted);
+  flex: 1 1 240px;
+}
+.mono {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 12px;
+}

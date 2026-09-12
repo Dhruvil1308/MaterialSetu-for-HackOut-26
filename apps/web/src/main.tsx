@@ -98,7 +98,8 @@ function App() {
     [pickup, setPickup] = useState(""),
     [trust, setTrust] = useState<any>(null),
     [pending, setPending] = useState<any>({ gst: [], evidence: [] }),
-    [disputes, setDisputes] = useState<any[]>([]);
+    [disputes, setDisputes] = useState<any[]>([]),
+    [overview, setOverview] = useState<any>(null);
   const initialized = useRef(false),
     searchSeq = useRef(0),
     loadedFor = useRef<string | null | undefined>(undefined);
@@ -123,18 +124,20 @@ function App() {
   async function refresh(who: User | null = user) {
     const admin = who?.role === "admin";
     // One wave, not four: none of these depend on each other's answers.
-    const [ls, ex, mine, queue, rows] = await Promise.all([
+    const [ls, ex, mine, queue, rows, view] = await Promise.all([
       api<Listing[]>("/listings"),
       who ? api<Exchange[]>("/exchanges") : Promise.resolve([]),
       who ? api(`/businesses/${who.id}/trust`) : Promise.resolve(null),
       admin ? api("/admin/evidence") : Promise.resolve(null),
       admin ? api<any[]>("/admin/disputes") : Promise.resolve(null),
+      admin ? api("/admin/overview") : Promise.resolve(null),
     ]);
     setAll(ls);
     setExchanges(ex);
     setTrust(mine);
     if (queue) setPending(queue);
     if (rows) setDisputes(rows);
+    if (view) setOverview(view);
   }
   async function search(who: User | null = user) {
     const seq = ++searchSeq.current;
@@ -287,7 +290,13 @@ function App() {
           <span className="avatar">{user?.name.charAt(0) || "M"}</span>
           <div>
             <b>{user?.name || "Your business workspace"}</b>
-            <small>{user?.city || "Mehsana, Gujarat"}</small>
+            <small>
+              {user
+                ? user.role === "admin"
+                  ? "Reviewer · checks GST and documents"
+                  : `${user.city} · buying and selling`
+                : "Mehsana, Gujarat"}
+            </small>
           </div>
         </div>
         <p className="nav-label">WORKSPACE</p>
@@ -421,12 +430,25 @@ function App() {
                     );
                 }}
               >
-                <option value="">Visitor</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
+                <option value="">Not signed in</option>
+                <optgroup label="Businesses — can buy and sell">
+                  {accounts
+                    .filter((a) => a.role !== "admin")
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name} · {a.city}
+                      </option>
+                    ))}
+                </optgroup>
+                <optgroup label="Platform">
+                  {accounts
+                    .filter((a) => a.role === "admin")
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name} · reviewer
+                      </option>
+                    ))}
+                </optgroup>
               </select>
             </label>
           </div>
@@ -961,16 +983,46 @@ function App() {
           {tab === "admin" && user?.role === "admin" && (
             <>
               <Title
-                eyebrow="MANUAL EVIDENCE REVIEW"
-                title="Review before recognition."
-                subtitle="Inspect evidence and record a review reference. A GST format match is not verification."
+                eyebrow="REVIEW CENTRE"
+                title="Nothing counts until a person checks it."
+                subtitle="Approve GST details and documents, settle disputes, and see the whole register."
               />
+              {overview && (
+                <div className="admin-stats">
+                  {[
+                    ["Awaiting GST review", overview.counts.pending_gst, true],
+                    ["Documents to check", overview.counts.pending_evidence, true],
+                    ["Open disputes", overview.counts.open_disputes, true],
+                    ["Registered businesses", overview.counts.businesses, false],
+                    ["Live listings", overview.counts.listings, false],
+                    ["Completed handovers", overview.counts.completed_exchanges, false],
+                  ].map(([label, n, actionable]: any) => (
+                    <div
+                      key={label}
+                      className={`admin-stat ${actionable && n > 0 ? "needs" : ""}`}
+                    >
+                      <strong>{n}</strong>
+                      <span>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <h2 className="admin-heading">
+                Waiting for you
+                {pending.gst.length + pending.evidence.length > 0 && (
+                  <span className="count">
+                    {pending.gst.length + pending.evidence.length}
+                  </span>
+                )}
+              </h2>
               <div className="admin-grid">
                 {pending.gst.map((g: any) => (
                   <ReviewCard
                     key={g.id}
+                    kind="GST details"
                     title={g.name}
-                    subtitle={`GSTIN: ${g.gstin}`}
+                    subtitle={g.gstin}
+                    note="A correctly shaped GSTIN is not a registered one. Check the certificate before approving."
                     onDecide={(approved: boolean, reference: string) =>
                       run(async () => {
                         await api(`/admin/gst/${g.id}`, {
@@ -985,8 +1037,10 @@ function App() {
                 {pending.evidence.map((e: any) => (
                   <ReviewCard
                     key={e.id}
+                    kind={label(e.kind)}
                     title={e.business}
-                    subtitle={label(e.kind)}
+                    subtitle={e.listing_id ? `Listing ${e.listing_id.slice(0, 8)}` : "Account document"}
+                    note="Download it, look at it, then write what you checked."
                     onOpen={() =>
                       run(async () => {
                         const res = await fetch(
@@ -1025,7 +1079,13 @@ function App() {
                   />
                 )}
               </div>
-              <h2>Disputed handovers</h2>
+              <h2 className="admin-heading">
+                Disputed handovers
+                {disputes.length > 0 && <span className="count">{disputes.length}</span>}
+              </h2>
+              {!disputes.length && (
+                <p className="muted">No handover is currently in dispute.</p>
+              )}
               {disputes.map((d) => (
                 <form
                   className="panel"
@@ -1067,6 +1127,66 @@ function App() {
                   </button>
                 </form>
               ))}
+              {overview && (
+                <>
+                  <h2 className="admin-heading">Registered businesses</h2>
+                  <div className="table-scroll">
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>Business</th>
+                          <th>Place</th>
+                          <th>GST</th>
+                          <th>Listings</th>
+                          <th>Handovers</th>
+                          <th>Trust</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {overview.businesses.map((b: any) => (
+                          <tr key={b.id}>
+                            <td>
+                              <b>{b.name}</b>
+                              {b.role === "admin" && (
+                                <span className="role-tag">reviewer</span>
+                              )}
+                              {b.is_demo && <span className="role-tag demo">demo</span>}
+                            </td>
+                            <td>{b.city}</td>
+                            <td>
+                              <span className={`gst ${b.gst_status}`}>
+                                {label(b.gst_status)}
+                              </span>
+                              {b.gstin && <small className="mono">{b.gstin}</small>}
+                              {b.gst_reference && (
+                                <small title={b.gst_reference}>{b.gst_reference}</small>
+                              )}
+                            </td>
+                            <td>{b.listings}</td>
+                            <td>{b.completed}</td>
+                            <td>{b.trust}/100</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <h2 className="admin-heading">Recent decisions</h2>
+                  {!overview.decided.length ? (
+                    <p className="muted">Nothing has been reviewed yet.</p>
+                  ) : (
+                    <ul className="decisions">
+                      {overview.decided.map((d: any) => (
+                        <li key={d.id}>
+                          <span className={`gst ${d.status}`}>{d.status}</span>
+                          <b>{d.business}</b>
+                          <span className="muted">{label(d.kind)}</span>
+                          <span className="reason">{d.reference}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
             </>
           )}
           <footer>
@@ -1984,7 +2104,7 @@ function ExchangeRow({ item: i, buyer, busy, onAction, onReview }: any) {
     </div>
   );
 }
-function ReviewCard({ title, subtitle, onOpen, onDecide }: any) {
+function ReviewCard({ kind, title, subtitle, note, onOpen, onDecide }: any) {
   return (
     <form
       className="panel"
@@ -1996,8 +2116,10 @@ function ReviewCard({ title, subtitle, onOpen, onDecide }: any) {
         onDecide(submitter.value === "approve", f.get("reference"));
       }}
     >
+      {kind && <span className="review-kind">{kind}</span>}
       <h3>{title}</h3>
-      <p>{subtitle}</p>
+      <p className="mono">{subtitle}</p>
+      {note && <p className="muted">{note}</p>}
       {onOpen && (
         <button type="button" className="outline" onClick={onOpen}>
           Download evidence

@@ -1128,6 +1128,71 @@ class Resolve(BaseModel):
     reference: str = Field(min_length=8, max_length=500)
 
 
+@app.get("/api/admin/overview")
+def admin_overview(user=Depends(admin), db=Depends(db_session)):
+    """Everything a reviewer needs on one screen: what is waiting, who is
+    registered, and what has already been decided."""
+    businesses = db.scalars(select(Business).order_by(Business.name)).all()
+    counts = coverage(db, [b.id for b in businesses])
+    listings = dict(
+        db.execute(
+            select(Listing.seller_id, func.count()).group_by(Listing.seller_id)
+        ).all()
+    )
+    decided = db.scalars(
+        select(Evidence)
+        .where(Evidence.reviewed_at.is_not(None))
+        .order_by(Evidence.reviewed_at.desc())
+        .limit(20)
+    ).all()
+    names = {b.id: b.name for b in businesses}
+    return {
+        "counts": {
+            "businesses": len(businesses),
+            "listings": sum(listings.values()),
+            "pending_gst": sum(1 for b in businesses if b.gst_status == "pending"),
+            "pending_evidence": db.scalar(
+                select(func.count())
+                .select_from(Evidence)
+                .where(Evidence.status == "pending")
+            ),
+            "open_disputes": db.scalar(
+                select(func.count())
+                .select_from(ExchangeItem)
+                .where(ExchangeItem.status == "disputed")
+            ),
+            "completed_exchanges": db.scalar(
+                select(func.count())
+                .select_from(ExchangeItem)
+                .where(ExchangeItem.status == "completed")
+            ),
+        },
+        "businesses": [
+            {
+                **public_business(b),
+                "role": b.role,
+                "gstin": b.gstin,
+                "gst_reference": b.gst_reference,
+                "listings": listings.get(b.id, 0),
+                "completed": counts[b.id]["completed"],
+                "trust": trust(db, b, counts[b.id])["score"],
+            }
+            for b in businesses
+        ],
+        "decided": [
+            {
+                "id": e.id,
+                "business": names.get(e.business_id, e.business_id),
+                "kind": e.kind,
+                "status": e.status,
+                "reference": e.reference,
+                "reviewed_at": e.reviewed_at,
+            }
+            for e in decided
+        ],
+    }
+
+
 @app.get("/api/admin/disputes")
 def disputes(user=Depends(admin), db=Depends(db_session)):
     return [

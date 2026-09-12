@@ -390,7 +390,11 @@ function MaterialSetu() {
         <View style={{ flex: 1 }}>
           <Text style={s.brand}>MaterialSetu</Text>
           <Text style={s.small}>
-            {user?.city || "Mehsana"} · Local material exchange
+            {user
+              ? user.role === "admin"
+                ? "Reviewer · use the website to review"
+                : `${user.city} · buying and selling`
+              : "Mehsana · Local material exchange"}
           </Text>
         </View>
         <Pressable
