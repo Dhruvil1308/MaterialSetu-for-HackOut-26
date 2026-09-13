@@ -1,18 +1,19 @@
 # Development validation
 
-Release 0.1.0 · Checked 12 September 2026
+Release 0.1.0 · Checked 13 September 2026
 
 ## Automated checks
 
 | Check | Result | Scope |
 | --- | --- | --- |
-| API tests | **17 passed** | Search, budgets, compatible pooling, supplier pair distance, authentication, document access, reviewer permissions, idempotency, reservation cancellation, concurrent acceptance, positive / partial handover, buyer review eligibility, and the model adapter's fallback and output validation |
+| API tests | **19 passed** | Search, budgets, compatible pooling, supplier pair distance, authentication, document access, reviewer permissions, idempotency, reservation cancellation, concurrent acceptance, positive / partial handover, buyer review eligibility, the model adapter's fallback and output validation, role enforcement in both directions, and admin GST management (list, enter, approve, revisit, clear, with the trust points following the record) |
 | Website build | **Passed** | TypeScript and Vite production bundle |
 | Mobile TypeScript | **Passed** | React Native application and shared API client |
 | Expo exports | **Passed** | Android, iOS and web JavaScript / Hermes bundles |
 | Browser integration | **Passed** | Demand search, multi-supplier PET request, each supplier acceptance, whole-plan readiness, trust dialog and 390 px layout |
 | Mobile web smoke | **Passed** | Discovery, supply plans and login sheet through the exported React Native web target |
-| Visual review | **Checked** | Desktop marketplace, evidence/trust dialog, responsive website and mobile web discovery |
+| Role panels | **Passed** | Generator, collector, both and admin each shown only their own navigation, on the website and the app |
+| Visual review | **Checked** | Every README screenshot, captured with demo mode off by `scripts/capture-screenshots.cjs` |
 
 The browser integration recorded no JavaScript page errors. API tests emit dependency deprecation warnings around Starlette's httpx TestClient integration; no tests fail. The test module clears `OPENAI_API_KEY`, so the suite describes behaviour with no model configured whatever the shell holds.
 

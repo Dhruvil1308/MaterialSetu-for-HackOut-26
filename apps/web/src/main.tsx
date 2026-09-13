@@ -352,10 +352,10 @@ function App() {
                   ? "Reviewer · checks GST and documents"
                   : `${user.city} · ${
                       kind === "buyer"
-                        ? "buying"
+                        ? "collects material"
                         : kind === "supplier"
-                          ? "supplying"
-                          : "buying and supplying"
+                          ? "generates surplus"
+                          : "generates and collects"
                     }`
                 : "Mehsana, Gujarat"}
             </small>
@@ -945,9 +945,11 @@ function App() {
                           </p>
                         </div>
                         <span className="pill neutral">
-                          {e.all_confirmed
-                            ? "All suppliers accepted"
-                            : "Check item statuses"}
+                          {e.items.every((i) => i.status === "completed")
+                            ? "Completed"
+                            : e.all_confirmed
+                              ? "All suppliers accepted"
+                              : "Check item statuses"}
                         </span>
                       </div>
                       <p className="pickup">

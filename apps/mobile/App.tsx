@@ -464,10 +464,10 @@ function MaterialSetu() {
                 ? "Reviewer · approves GST and documents"
                 : `${user.city} · ${
                     user.kind === "buyer"
-                      ? "buying"
+                      ? "collects material"
                       : user.kind === "supplier"
-                        ? "supplying"
-                        : "buying and supplying"
+                        ? "generates surplus"
+                        : "generates and collects"
                   }`
               : "Mehsana · Local material exchange"}
           </Text>
@@ -775,7 +775,9 @@ function MaterialSetu() {
                     <Text style={s.body}>{e.pickup}</Text>
                     {e.pooled && (
                       <Text style={s.notice}>
-                        {e.all_confirmed
+                        {e.items.every((i) => i.status === "completed")
+                          ? "Completed"
+                          : e.all_confirmed
                           ? "All suppliers accepted"
                           : "Wait for every supplier to accept before collection."}
                       </Text>

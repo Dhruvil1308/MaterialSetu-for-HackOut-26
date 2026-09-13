@@ -6,7 +6,7 @@
 flowchart TD
   W[React website] --> API[FastAPI service]
   N[React Native iOS and Android] --> API
-  R[Web reviewer dashboard] --> API
+  R[Admin review centre, web and app] --> API
   API --> DB[(SQLite or PostgreSQL)]
   API --> FILES[Evidence storage]
   API --> MATCH[Material and nearby matching]
@@ -15,7 +15,34 @@ flowchart TD
 
 The TypeScript clients share the API contract, formatting and request helper. Business rules are enforced on the server so the mobile and website flows cannot bypass each other's inventory or permission checks. Bearer session tokens are opaque; only token hashes are stored in the database. Passwords are PBKDF2 salted hashes. Sessions expire after seven days.
 
-## Buyer and supplier workflow
+## Roles
+
+Every business account declares what it came to do, at registration, and can change it later from its account page. The choice is enforced by the API, and each client shows only the navigation that role can use.
+
+| Role | `kind` / `role` | Can | Cannot |
+| --- | --- | --- | --- |
+| Generator | `kind=supplier` | List material, upload evidence, accept and confirm handovers, submit GST | Send collection requests (403) |
+| Collector | `kind=buyer` | Search, send pooled requests, confirm handovers, review completed deals | List material (403) |
+| Both | `kind=both` | Everything a generator and a collector can | — |
+| Admin | `role=admin` | Review GST and evidence, manage every GST record, settle disputes, see every business | Trade; decide its own GST or evidence |
+
+`role` is never set through the API. Registration only accepts the three `kind` values; admin accounts are created by the database operator with `services/api/set_admin.py` (new account with password) or `create_reviewer.py` (promote an existing one).
+
+## GST management
+
+| Endpoint | Effect |
+| --- | --- |
+| `POST /api/me/gst` | A business submits its GSTIN. Structure is checked; status becomes `pending` |
+| `GET /api/admin/businesses?status=` | Every business with email, role, GSTIN, status, last note, listings, handovers and score |
+| `PUT /api/admin/gst/{id}` | Admin enters or corrects a GSTIN. It lands as `pending`: entering is not checking |
+| `POST /api/admin/gst/{id}` | Approve (`reviewed`, +25 points) or reject. A settled decision can be revisited |
+| `DELETE /api/admin/gst/{id}` | Clear the record; the points it earned are removed with it |
+
+Every admin action requires a written reference of at least eight characters, stored with the decision. No admin may act on its own business.
+
+## Collector and generator workflow
+
+Code and data use `buyer` for the collector and `seller`/`supplier` for the generator.
 
 ```mermaid
 flowchart TD
@@ -96,7 +123,7 @@ Every reply is validated back to the taxonomy before use: unknown material IDs a
 
 | Entity | Purpose |
 | --- | --- |
-| Business | Account, registered coordinates, GST review state and role |
+| Business | Account, registered coordinates, GST review state, `role` and `kind` |
 | LoginSession | Hashed bearer token and expiry |
 | Listing | Declared material, condition, price and available stock |
 | Evidence | Ownership, optional listing link, file and reviewer decision |
@@ -106,4 +133,4 @@ Every reply is validated back to the taxonomy before use: unknown material IDs a
 
 Photos are public listing evidence. GST documents and weighing slips require the owner or reviewer token to download; other buyers see review status only. Images are decoded, resized and rewritten to remove metadata. Files have a 5 MB upload limit. PDF validation checks the file signature; deeper malware scanning is not implemented. Files are not served from a public static directory.
 
-The database operator controls reviewer promotion. An exchange seller only receives their own items, while the buyer can inspect the complete pool. Registration cannot create an admin. Requests have idempotency keys: retrying the same allocation returns the same exchange; reusing a key for different items is rejected.
+The database operator controls admin accounts. An exchange seller only receives their own items, while the buyer can inspect the complete pool. Registration cannot create an admin. The live deployment runs with `DEMO_MODE=0`: no fictional records are seeded and the passwordless demo login is disabled. Requests have idempotency keys: retrying the same allocation returns the same exchange; reusing a key for different items is rejected.

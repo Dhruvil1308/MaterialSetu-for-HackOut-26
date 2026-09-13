@@ -1,20 +1,23 @@
 <div align="center">
 
-# ♻️ MaterialSetu
+<img src="apps/web/public/logo.svg" width="84" alt="MaterialSetu logo" />
+
+# MaterialSetu
 
 ### The local exchange for surplus packaging material
 
 **One factory throws away what the factory next door is buying. MaterialSetu helps them find each other.**
 
-[![Website](https://img.shields.io/badge/Website-Live-14453a?style=for-the-badge)](https://material-setu-for-hack-out-26-web.vercel.app/)
-[![Android](https://img.shields.io/badge/Android-APK%20ready-3ddc84?style=for-the-badge&logo=android&logoColor=white)](#-try-it-now)
-[![iOS](https://img.shields.io/badge/iOS-Simulator%20build-000000?style=for-the-badge&logo=apple&logoColor=white)](#-try-it-now)
+[![Website](https://img.shields.io/badge/Website-Live-0f3d31?style=for-the-badge)](https://material-setu-for-hack-out-26-web.vercel.app/)
+[![Android](https://img.shields.io/badge/Android-Download%20APK-3ddc84?style=for-the-badge&logo=android&logoColor=white)](https://drive.google.com/drive/folders/1xcZ9f50orPHMnsKcwi9gxry784bJQfay?usp=sharing)
+[![iOS](https://img.shields.io/badge/iOS-Expo%20Go-000000?style=for-the-badge&logo=apple&logoColor=white)](#-iphone)
 
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=black)
 ![React Native](https://img.shields.io/badge/React_Native-0.86-61dafb?logo=react&logoColor=black)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169e1?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-17%20passing-2c6a4c)
+![Tests](https://img.shields.io/badge/API%20tests-19%20passing-2c6a4c)
+![UAT](https://img.shields.io/badge/acceptance%20checks-96%2F96-2c6a4c)
 
 **HackOut'26 · Team Tech Titans · Ganpat University**
 
@@ -27,55 +30,87 @@
 | | Link | Notes |
 | :-- | :-- | :-- |
 | 🌐 **Website** | **[material-setu-for-hack-out-26-web.vercel.app](https://material-setu-for-hack-out-26-web.vercel.app/)** | Works on phone and laptop. Nothing to install. |
-| 🤖 **Android** | **[Download the APK](https://expo.dev/artifacts/eas/UUn2ivp5nFhgSdYC8ZpM7uh2oKTt9buEOXosXty9wwc.apk)** | Open on your phone and tap install. Allow "unknown sources". |
-| 🎬 **Demo video** | **[Watch the two-minute walkthrough](docs/demo-video.mp4)** | The real product, recorded end to end. Silent — English and Hindi voiceover scripts in [docs/demo-script.md](docs/demo-script.md). |
-| 🍎 **iOS** | [Simulator build](https://expo.dev/artifacts/eas/EHbcWS-7-LR0ZYtychLx4EAmJeA-a67DYmoR8ArQM1E.tar.gz) | Runs in Xcode's iOS Simulator. An iPhone build needs a paid Apple Developer account — that part is still pending. |
+| 🤖 **Android** | **[Download the APK (Google Drive)](https://drive.google.com/drive/folders/1xcZ9f50orPHMnsKcwi9gxry784bJQfay?usp=sharing)** | Download on the phone, tap it, allow "install unknown apps". Also on [Expo](https://expo.dev/accounts/dhruvil1309/projects/materialsetu/builds/123cbea2-0d8d-47ed-b802-db6d6a249725). |
+| 🍎 **iPhone** | [Run in Expo Go](#-iphone) | Free, through the Expo Go app. A standalone iPhone install needs a paid Apple Developer account. |
+| 🎬 **Demo video** | [Two-minute walkthrough](docs/demo-video.mp4) | Recorded end to end on a test database. Voiceover scripts in [docs/demo-script.md](docs/demo-script.md). |
 
-> ⏳ **First load takes up to a minute.** The server sleeps when nobody is using it, so the app shows a "Waking the server…" screen while it starts. Everything after that is instant.
+### 🔑 Signing in
+
+| To see | Do this |
+| :-- | :-- |
+| 🛡️ **The admin panel** | Sign in with **`admin`** / **`admin`** |
+| 🏭 **The generator panel** | **Create account** → choose **"We generate surplus"** |
+| 🚛 **The collector panel** | **Create account** → choose **"We collect material"** |
+
+> ⏳ **The first load can take up to a minute.** The free server sleeps when idle, and the app shows a "waking the exchange" screen while it starts. Everything after that is quick.
 >
-> 👤 **No signup needed.** Pick any business from the **"Explore as"** menu at the top to log in.
+> ✅ **The live site holds only real records.** There are no sample businesses on it. If a search comes back empty, nobody nearby has listed that material yet.
 
 ---
 
 ## 🤔 The problem
 
-A packaging factory in Mehsana has 30 kg of leftover PET. It goes to waste.
+A packaging unit in Mehsana has 30 kg of leftover PET. It gets thrown away.
 
-A buyer 2 km away needs 50 kg of PET. They buy it new.
+A recycler 2 km away needs 50 kg of PET. They buy it new.
 
-Neither knows the other exists. And even if they did, two questions stop the deal:
+Neither knows the other exists. Even if they did, two things stop the deal:
 
-1. **"30 kg isn't enough for me."** Small leftovers are too small to be worth a trip.
-2. **"Can I trust this seller?"** No history, no proof, no recourse.
+1. **"30 kg isn't enough for me."** Small leftovers aren't worth a trip on their own.
+2. **"Can I trust this business?"** No history, no proof, no one who checked.
 
 ## 💡 Our answer
 
 ```mermaid
 flowchart LR
-    A["🏭 Supplier A<br/>30 kg PET"] --> P
-    B["🏭 Supplier B<br/>25 kg PET"] --> P
-    C["🏭 Supplier C<br/>18 kg PET"] --> P
-    P{"♻️ MaterialSetu<br/>combines nearby<br/>surplus"} --> D["🛒 Buyer needs<br/>50 kg PET<br/>₹1,377 · 12.3 km trip"]
+    A["🏭 Generator A<br/>35 kg PET"] --> P
+    B["🏭 Generator B<br/>15 kg PET"] --> P
+    C["🏭 Generator C<br/>25 kg PET"] --> P
+    P{"♻️ MaterialSetu<br/>combines nearby<br/>surplus"} --> D["🚛 Collector needs<br/>50 kg PET<br/>one collection trip"]
 
-    style P fill:#14453a,color:#fff,stroke:#14453a
-    style D fill:#e9ece7,stroke:#14453a,color:#141a16
+    style P fill:#0f3d31,color:#fff,stroke:#0f3d31
+    style D fill:#e9ece7,stroke:#0f3d31,color:#141a16
 ```
 
-**Two ideas, together:**
+**Two ideas, working together:**
 
-- 🧩 **Pooling** — add up small leftovers from suppliers who are near each other until the buyer has enough.
-- 🛡️ **Evidence-based trust** — every supplier gets a score out of 100, built only from things a human has checked.
+- 🧩 **Pooling** — add up small leftovers from generators who are close to each other until the collector has enough.
+- 🛡️ **Evidence-based trust** — every business gets a score out of 100, built only from things a person has checked.
 
 ---
 
-## 📸 What it looks like
+## 👥 Three roles, three panels
+
+Every account chooses what it came to do when it signs up. **Each panel shows only the work that role does — nothing else.**
+
+<div align="center">
+<img src="docs/screenshots/web-roles.png" width="760" alt="Create account screen with the three role choices" />
+</div>
+
+| Role | Who they are | Website panel | Android / iPhone tabs |
+| :-- | :-- | :-- | :-- |
+| 🏭 **Generator** | A business whose work leaves surplus packaging | My listings · Requests · Trust & verification | Requests · Supply · Account |
+| 🚛 **Collector** | A business that collects and uses that material | Find materials · Exchanges · Trust & verification | Discover · Pools · Exchanges · Account |
+| 🔁 **Both** | A business that does both | All of the above | All of the above |
+| 🛡️ **Admin** | MaterialSetu reviewer | **Review centre only** | **Review · Account** |
+
+**The rules are enforced by the API, not just hidden in the interface:**
+
+- A collector-only account **cannot list material**. A generator-only account **cannot send collection requests**. Both get a clear message saying which setting to change.
+- A business can switch between Generator, Collector and Both from its account page at any time.
+- **Nobody can make themselves admin.** It isn't offered at signup. Admin accounts are created by the operator with `services/api/set_admin.py`.
+- An admin **never trades** and **cannot approve its own GST or documents**.
+
+---
+
+## 📸 What each panel looks like
 
 <div align="center">
 
-### Search and supply plans
-*Type what you need in plain words. Get real listings, plus combined plans that meet your quantity.*
+### 🚛 Collector — search and supply plans
+*Type what you need in plain words. Get nearby listings, plus combined plans that add up to your quantity.*
 
-<img src="docs/screenshots/web-marketplace.png" width="820" alt="Marketplace showing PET listings and two supply plans" />
+<img src="docs/screenshots/web-marketplace.png" width="820" alt="Collector searching 50 kg PET and seeing a two-supplier plan" />
 
 </div>
 
@@ -84,39 +119,74 @@ flowchart LR
 <td width="50%" valign="top">
 
 ### 🛡️ Trust, explained
-Every point is shown and where it came from.
+Every point shows where it came from.
 
-<img src="docs/screenshots/web-trust.png" alt="Trust score breakdown" />
+<img src="docs/screenshots/web-trust.png" alt="Trust score breakdown for a generator" />
 
 </td>
 <td width="50%" valign="top">
 
 ### 🤝 Exchanges
-Both sides confirm what actually changed hands.
+Each generator accepts separately. Both sides confirm what changed hands.
 
-<img src="docs/screenshots/web-exchange.png" alt="Exchange with supplier acceptance" />
+<img src="docs/screenshots/web-exchange.png" alt="A pooled exchange accepted by both generators, and a completed one" />
 
 </td>
 </tr>
 <tr>
 <td valign="top">
 
-### 📱 On a phone
-Same site, fully responsive.
+### 🏭 Generator — my listings
+Only their own supply. No search, nothing to buy.
 
-<img src="docs/screenshots/web-phone.png" width="260" alt="Website at phone width" />
+<img src="docs/screenshots/web-generator.png" alt="Generator panel showing its listings" />
 
 </td>
 <td valign="top">
 
-### 📲 The mobile app
-Discover and Pools tabs in the React Native app.
+### 🛡️ Admin — review centre
+The GST queue, documents, disputes and every business, with full GST management.
 
-<img src="docs/screenshots/native-web-pools.png" width="260" alt="Mobile app supply pools" />
+<img src="docs/screenshots/web-review-centre.png" alt="Admin review centre with a GST record open for management" />
 
 </td>
 </tr>
 </table>
+
+<table>
+<tr>
+<td align="center" valign="top">
+
+**Website on a phone**
+
+<img src="docs/screenshots/web-phone.png" width="220" alt="Website at phone width" />
+
+</td>
+<td align="center" valign="top">
+
+**App · Discover**
+
+<img src="docs/screenshots/app-discover.png" width="220" alt="Mobile app discover tab" />
+
+</td>
+<td align="center" valign="top">
+
+**App · Pools**
+
+<img src="docs/screenshots/app-pools.png" width="220" alt="Mobile app supply pools" />
+
+</td>
+<td align="center" valign="top">
+
+**App · Admin review**
+
+<img src="docs/screenshots/app-review.png" width="220" alt="Mobile app admin review tab" />
+
+</td>
+</tr>
+</table>
+
+<sub>Screenshots are taken by <code>scripts/capture-screenshots.cjs</code> on a throwaway local database, with demo mode off — the same way the live site runs. The businesses in them are test accounts.</sub>
 
 ---
 
@@ -124,51 +194,61 @@ Discover and Pools tabs in the React Native app.
 
 ```mermaid
 flowchart TD
-    A["1️⃣ Buyer types<br/>'50 kg PET within 30 km'"] --> B["2️⃣ App combines nearby suppliers<br/>into complete plans"]
-    B --> C["3️⃣ Buyer picks a plan<br/>and sends a request"]
-    C --> D["4️⃣ Each supplier accepts separately<br/>✅ only now is stock reserved"]
-    D --> E["5️⃣ Material is collected"]
-    E --> F["6️⃣ Both sides type the real weight<br/>numbers must match"]
-    F --> G["7️⃣ Done — buyer can leave<br/>one review"]
+    A["1️⃣ Generator lists surplus<br/>and uploads a photo / weighing slip"] --> B["2️⃣ Collector types<br/>'50 kg PET within 30 km'"]
+    B --> C["3️⃣ App combines nearby generators<br/>into complete plans"]
+    C --> D["4️⃣ Collector picks a plan<br/>and sends one request"]
+    D --> E["5️⃣ Each generator accepts separately<br/>✅ only now is stock reserved"]
+    E --> F["6️⃣ Material is collected"]
+    F --> G["7️⃣ Both sides type the real weight<br/>the numbers must match"]
+    G --> H["8️⃣ Done — collector leaves one review<br/>unused stock goes back on sale"]
 
-    style A fill:#e9ece7,stroke:#14453a,color:#141a16
-    style D fill:#fff4e0,stroke:#8a5a0b,color:#141a16
-    style F fill:#fff4e0,stroke:#8a5a0b,color:#141a16
-    style G fill:#e3f0e8,stroke:#2c6a4c,color:#141a16
+    style A fill:#e9ece7,stroke:#0f3d31,color:#141a16
+    style E fill:#fff4e0,stroke:#8a5a0b,color:#141a16
+    style G fill:#fff4e0,stroke:#8a5a0b,color:#141a16
+    style H fill:#e3f0e8,stroke:#2c6a4c,color:#141a16
 ```
 
-**The two steps in orange are the ones that make it honest:**
+**The two orange steps are what keep it honest:**
 
-- Sending a request reserves **nothing**. Stock is only held when a supplier actually agrees.
-- If the buyer says 28 kg and the supplier says 25 kg, the app **refuses both** and either side can report a problem for a reviewer to settle.
+- Sending a request reserves **nothing**. Stock is held only when a generator actually agrees.
+- If the collector says 28 kg and the generator says 25 kg, the app **accepts neither**, and either side can report the problem for the admin to settle.
 
 ---
 
-## 👥 Who uses it
+## 🧾 GST verification
 
-| Role | Who they are | What they do |
-| :-- | :-- | :-- |
-| 🛒 **Buyer** | A business that needs material | Search, compare plans, request, confirm, review |
-| 🏭 **Supplier** | A business with surplus | List material, upload proof, accept, confirm |
-| 🛡️ **Reviewer** | MaterialSetu staff | Check GST and documents, settle disputes |
+GST is checked by a **person**, never assumed from a correctly shaped number.
 
-**Trying it out?** Pick these from the **"Explore as"** menu to see each side:
+```mermaid
+flowchart LR
+    S["🏭 Business submits<br/>GSTIN + certificate"] --> P["⏳ Pending<br/>0 points"]
+    P --> R{"🛡️ Admin opens the<br/>certificate and writes<br/>what they checked"}
+    R -->|Approve| OK["✅ Reviewed<br/>+25 trust points"]
+    R -->|Reject| NO["❌ Rejected<br/>0 points"]
+    OK -.->|registration lapsed| R
+    OK -.->|wrong number| X["🗑️ Cleared<br/>points removed"]
 
-| Pick this account | You become |
+    style R fill:#0f3d31,color:#fff,stroke:#0f3d31
+    style OK fill:#e3f0e8,stroke:#2c6a4c,color:#141a16
+    style NO fill:#fdf1ef,stroke:#b23a2e,color:#141a16
+```
+
+The admin panel's **Registered businesses** table gives full control over every GST record:
+
+| Action | What it does |
 | :-- | :-- |
-| **Setu Packaging Studio** | the 🛒 buyer — start here |
-| **North Gujarat Polymers** or **Umiya Packaging Works** | a 🏭 supplier — accept the buyer's request |
-| **MaterialSetu Reviewer** | the 🛡️ reviewer — a "Review centre" tab appears |
+| 👁️ **View** | Every business — email, city, role, GSTIN, status, last reviewer note, listings, handovers, trust score |
+| ➕ **Enter / correct** | Type in or fix a GSTIN for a business (a typo, or a number given by phone). It goes back to **pending** — entering a number is not checking it |
+| ✅ **Approve / reject** | Record a decision. A decision already made can be **revisited** |
+| 🗑️ **Clear** | Remove the record entirely. **The 25 points it earned go with it** |
 
-Switching accounts is how you play both sides of one deal. There are no passwords in demo mode.
-
-Nobody can make themselves a reviewer. Signing up always creates a normal business account; the reviewer role is given from the database by an operator.
+**Every action needs a written reason**, and the reason is shown next to the score it gives. The same queue is on the Android and iPhone app under the **Review** tab.
 
 ---
 
 ## 🛡️ The trust score
 
-A supplier's score is **100 points**, and every point is explained on screen.
+A business's score is **out of 100**, and every point is explained on screen.
 
 ```mermaid
 pie showData
@@ -177,56 +257,56 @@ pie showData
     "Completed handovers" : 25
     "Weighing slips checked" : 20
     "Material photos checked" : 15
-    "Reviews from real buyers" : 15
+    "Reviews from real collectors" : 15
 ```
 
-| Points | How you earn them |
+| Points | How they are earned |
 | :-- | :-- |
-| **25** | A reviewer checks your GST document and records what they checked |
-| **20** | Weighing slips uploaded and approved, across your listings |
-| **15** | Material photos uploaded and approved, across your listings |
-| **25** | Confirmed handovers — full marks at 10 |
-| **15** | Ratings from buyers, and only from buyers who completed a deal |
+| **25** | The admin checks the GST certificate and records what they checked |
+| **20** | Weighing slips uploaded and approved, across the business's listings |
+| **15** | Material photos uploaded and approved, across the business's listings |
+| **25** | Handovers confirmed by both sides — full marks at 10 |
+| **15** | Ratings, only from collectors who completed a deal with them |
 
-**Important:** this measures **evidence**, not quality. A new business scores low because it has no history yet — that is not an accusation, and the app says so.
+**This measures evidence, not honesty.** A new business scores low because it has no history yet — the app says so on screen.
 
-Nothing counts until a human approves it. Upload a photo and it sits at `pending` worth **zero points** until a reviewer looks at it.
+Nothing counts until a person approves it. An uploaded photo sits at **pending, worth zero**, until the admin looks at it.
 
 ---
 
-## ✨ What the app can do
+## ✨ What it can do
 
 <table>
 <tr><td width="33%" valign="top">
 
 ### 🔍 Search
-Type it however you like — *"50 kg PET within 30 km"*. Filter by material, condition, intended use, distance and budget.
+Type it however you like — *"50 kg PET within 30 km"*. Filter by material, condition, reuse or recycle, distance and budget.
 
 </td><td width="33%" valign="top">
 
 ### 🧩 Pooling
-Combines up to 4 nearby suppliers. **Never mixes** PET with HDPE — different plastics stay separate options.
+Combines up to 4 nearby generators, who must also be near **each other**. **Never mixes** PET with HDPE.
 
 </td><td width="33%" valign="top">
 
 ### 💰 Cost estimate
-Material cost plus a transport estimate you can adjust. Shown as an estimate, never as a quote.
+Material cost plus an editable transport estimate. Always shown as an estimate, never a quote.
 
 </td></tr>
 <tr><td valign="top">
 
-### 🌏 Many languages
+### 🌏 Your language
 Ask in Hindi or Gujarati. *"मुझे 20 लकड़ी के पैलेट चाहिए"* → 20 wooden pallets.
 
 </td><td valign="top">
 
 ### 📷 Photo suggestions
-Photograph your material and the app suggests a category. You always confirm it yourself.
+Photograph the material and the app suggests a category. The generator always confirms it.
 
 </td><td valign="top">
 
-### 📄 Proof you control
-Photos are public. Weighing slips and GST documents are private to you and the reviewer.
+### 📄 Private documents
+Photos are public. Weighing slips and GST certificates are visible only to the business and the admin. Files are stored in a private bucket.
 
 </td></tr>
 </table>
@@ -238,26 +318,56 @@ Photos are public. Weighing slips and GST documents are private to you and the r
 ```mermaid
 flowchart TD
     W["🌐 Website<br/>React + Vite<br/><i>Vercel</i>"] --> API
-    M["📱 Mobile app<br/>React Native + Expo<br/><i>Android + iOS</i>"] --> API
-    API["⚙️ API<br/>FastAPI · Python<br/><i>Render, Singapore</i>"] --> DB[("🗄️ PostgreSQL<br/><i>Supabase</i>")]
-    API --> AI["🧠 Language + vision<br/><i>optional</i>"]
+    M["📱 App<br/>React Native + Expo<br/><i>Android + iPhone</i>"] --> API
+    API["⚙️ API<br/>FastAPI · Python<br/><i>Render, Singapore</i>"] --> DB[("🗄️ PostgreSQL<br/><i>Supabase · private schema</i>")]
+    API --> ST[("🗂️ File storage<br/><i>Supabase private bucket</i>")]
+    API --> AI["🧠 Language + photo<br/>suggestions<br/><i>optional</i>"]
 
-    style API fill:#14453a,color:#fff,stroke:#14453a
-    style DB fill:#e9ece7,stroke:#14453a,color:#141a16
+    style API fill:#0f3d31,color:#fff,stroke:#0f3d31
+    style DB fill:#e9ece7,stroke:#0f3d31,color:#141a16
+    style ST fill:#e9ece7,stroke:#0f3d31,color:#141a16
     style AI fill:#f3f1ea,stroke:#8a5a0b,color:#141a16
 ```
 
-All the rules live in the API, so the website and the app cannot get different answers or bypass each other's checks.
+**Every rule lives in the API** — roles, reservations, trust points, GST decisions. The website and the app can't disagree or skip each other's checks.
 
 | Layer | Built with |
 | :-- | :-- |
 | Website | React 19, Vite, TypeScript |
-| Mobile | React Native 0.86, Expo SDK 57 |
+| App | React Native 0.86, Expo SDK 57 |
 | API | FastAPI, SQLAlchemy 2, Python 3.13 |
-| Database | PostgreSQL 17 (SQLite for local development) |
+| Database | PostgreSQL 17 on Supabase (SQLite for local development) |
+| Files | Supabase Storage, private bucket, served only through the API |
 | Shared | One TypeScript package for API types and helpers |
 
-**Security basics:** passwords are hashed with PBKDF2 (200,000 rounds), session tokens are stored only as hashes, and application tables live in a private database schema that the public API key cannot reach.
+**Security basics:** passwords hashed with PBKDF2 (200,000 rounds) · session tokens stored only as hashes · tables in a private `app` schema the public Supabase key cannot reach · uploaded images re-encoded to strip metadata · 5 MB upload limit.
+
+---
+
+## 📱 Install the app
+
+### 🤖 Android
+
+1. Open the **[Google Drive folder](https://drive.google.com/drive/folders/1xcZ9f50orPHMnsKcwi9gxry784bJQfay?usp=sharing)** on the phone and download the APK.
+2. Tap the file. If Android says *"not allowed to install unknown apps"*, tap **Settings → Allow from this source**, then go back.
+3. Tap **Install**. An older MaterialSetu updates in place.
+
+### 🍎 iPhone
+
+Apple doesn't allow installing an app from a link without a paid Developer account, so the iPhone version runs inside **Expo Go**:
+
+1. Install **Expo Go** from the App Store.
+2. On a computer with this repository, start the app with a tunnel:
+
+   ```bash
+   cd apps/mobile
+   npm ci
+   EXPO_PUBLIC_API_URL="https://materialsetu-for-hackout-26.onrender.com/api" npx expo start --tunnel
+   ```
+
+3. Scan the QR code it prints with the iPhone **Camera** app. It opens in Expo Go.
+
+The tunnel means the phone does **not** need to be on the same Wi-Fi. Keep the terminal open while using it.
 
 ---
 
@@ -273,20 +383,20 @@ npm ci
 python scripts/dev.py
 ```
 
-Then open **http://localhost:5173**. API docs are at **http://localhost:8000/docs**.
+Open **http://localhost:5173**. API docs are at **http://localhost:8000/docs**.
 
-That starts with demo data already loaded. Pick an account from the menu at the top — no passwords needed.
+Locally, `scripts/dev.py` turns on **demo mode**: a set of clearly fictional businesses and an **"Explore as"** menu to switch between them without passwords. The live site never runs in demo mode.
 
 <details>
-<summary><b>Run the mobile app</b></summary>
+<summary><b>Run the mobile app locally</b></summary>
 
 ```bash
 cd apps/mobile
 npm ci
-npx expo start --go
+npx expo start --tunnel
 ```
 
-For a real phone, set `EXPO_PUBLIC_API_URL` to your computer's LAN address in `apps/mobile/.env`, then restart Expo. Add `--clear` when you change it, or Expo keeps the old value cached.
+For the app to reach your local API, set `EXPO_PUBLIC_API_URL` to a URL the phone can reach, and add `--clear` whenever you change it — Expo caches the old value.
 
 </details>
 
@@ -299,7 +409,7 @@ npx eas-cli login
 npx eas-cli build --platform android --profile preview
 ```
 
-The API address is already pinned in `eas.json`, so the APK works on any phone with internet.
+The live API address is pinned in `eas.json`, so the APK works on any phone with internet.
 
 </details>
 
@@ -307,50 +417,69 @@ The API address is already pinned in `eas.json`, so the APK works on any phone w
 <summary><b>Check everything still works</b></summary>
 
 ```bash
-python scripts/uat.py                        # 96 acceptance checks, plain English
-cd services/api && python -m pytest -q      # 17 API tests
+python scripts/uat.py                        # 96 acceptance checks, in plain English
+cd services/api && python -m pytest -q      # 19 API tests
 npm run build                               # website type check and build
-cd apps/mobile && npm run typecheck         # mobile type check
-node scripts/browser-smoke.cjs              # real browser, end to end
+cd apps/mobile && npm run typecheck         # app type check
+node scripts/browser-smoke.cjs              # real browser, website and app, end to end
+node scripts/capture-screenshots.cjs        # regenerate the README screenshots
 ```
 
 </details>
 
 <details>
-<summary><b>Turn on the language and photo features locally</b></summary>
+<summary><b>Turn on the language and photo features</b></summary>
 
-They are optional. Without a key the app uses keyword rules and everything else
-works normally.
+Optional. Without a key the app uses keyword rules and everything else works the same.
 
 ```bash
 export OPENAI_API_KEY=sk-...     # server-side only, never in the website or app
 python scripts/dev.py
 ```
 
-Check it took effect: `http://localhost:8000/api/health` should report
-`"classification": "model"`.
+`http://localhost:8000/api/health` should then report `"classification": "model"`.
 
 </details>
+
+---
+
+## 🛠️ Operator commands
+
+Run these by hand against a database you control. They are deliberately **not** reachable through the website or app. Against Supabase, always set `DB_SCHEMA=app`.
+
+```bash
+cd services/api
+export DATABASE_URL="postgresql+psycopg://..."   # the same value Render uses
+```
+
+| Command | What it does |
+| :-- | :-- |
+| `DB_SCHEMA=app python set_admin.py admin admin` | Create an admin account, or change its password. Leave the password out to be prompted without echo |
+| `DB_SCHEMA=app python create_reviewer.py someone@example.com` | Give admin access to an account that already signed up |
+| `python ../../scripts/clean_demo.py --dry-run` | Add any missing columns and count demo records. Drop `--dry-run` to delete them |
+| `python ../../scripts/drop_public_tables.py` | Remove empty tables accidentally created in the public schema |
 
 ---
 
 ## 📁 Where things are
 
 ```text
-apps/web/          the website — React + Vite
-apps/mobile/       the Android and iOS app — React Native + Expo
-packages/shared/   API types and helpers both clients use
-services/api/      the whole backend
-  ├── main.py      every endpoint
-  ├── domain.py    matching, pooling and cost rules — no framework, easy to read
-  ├── models.py    the database tables
-  ├── ai.py        optional language and photo suggestions
-  └── test_api.py  the 17 tests
-docs/              architecture, demo script, validation notes
+apps/web/            the website — React + Vite
+apps/mobile/         the Android and iPhone app — React Native + Expo
+packages/shared/     API types and helpers both clients use
+services/api/        the whole backend
+  ├── main.py        every endpoint, including roles and GST management
+  ├── domain.py      matching, pooling and cost rules — plain Python
+  ├── models.py      the database tables
+  ├── storage.py     private file storage
+  ├── ai.py          optional language and photo suggestions
+  ├── set_admin.py   create or update an admin account
+  └── test_api.py    the 19 tests
+scripts/             dev runner, acceptance checks, browser tests, operator scripts
+docs/                architecture, walkthrough, validation, screenshots, demo video
 ```
 
-If you only read one file, read **`services/api/domain.py`** — the pooling and
-cost logic is all there in plain Python.
+If you only read one file, read **`services/api/domain.py`** — the pooling and cost logic is all there.
 
 ---
 
@@ -360,21 +489,14 @@ cost logic is all there in plain Python.
 | :-- | :-- | :-- |
 | Website | Vercel | `vercel.json` |
 | API | Render (Singapore) | `render.yaml` |
-| Database | Supabase (PostgreSQL) | `DATABASE_URL` + `DB_SCHEMA=app` |
+| Database + files | Supabase (PostgreSQL + Storage) | `DATABASE_URL`, `DB_SCHEMA=app`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` |
 | Android app | EAS Build | `apps/mobile/eas.json` |
 
-The API needs `DATABASE_URL`, `DB_SCHEMA`, `CORS_ORIGINS` and optionally
-`OPENAI_API_KEY`. The website needs only `VITE_API_URL`. Every one of them is
-explained in [.env.example](.env.example).
+The API needs `DATABASE_URL`, `DB_SCHEMA`, `CORS_ORIGINS`, `DEMO_MODE=0`, the Supabase storage pair, and optionally `OPENAI_API_KEY`. The website needs only `VITE_API_URL`. Every one is explained in [.env.example](.env.example).
 
-**Why `DB_SCHEMA` matters:** Supabase publishes the `public` schema over HTTPS to
-the browser key that ships inside the website and the app. Putting our tables in a
-private `app` schema instead is what keeps password hashes and session tokens out
-of reach.
+**Why `DB_SCHEMA` matters:** Supabase publishes the `public` schema over HTTPS to the key that ships inside the website and app. Keeping our tables in a private `app` schema is what keeps password hashes and session tokens out of reach.
 
-The free API server sleeps after 15 minutes of quiet, so
-[a scheduled job](.github/workflows/keep-warm.yml) pings it to keep the first
-visit fast.
+The free API server sleeps after 15 minutes of quiet, so [a scheduled job](.github/workflows/keep-warm.yml) pings it to keep the first visit fast.
 
 ---
 
@@ -384,18 +506,18 @@ We would rather be trusted than impressive.
 
 | ✅ Really works | ❌ Not built yet |
 | :-- | :-- |
-| Accounts, listings, search, filters | Payments of any kind |
-| Pooling across nearby suppliers | Live GST registry lookup |
-| Trust scores from checked evidence | Real transport quotes or booking |
+| Generator, collector and admin roles, enforced by the API | Payments of any kind |
+| Listings, search, filters, pooling across nearby generators | Live lookup against the government GST registry |
+| Trust scores built only from checked evidence | Real transport quotes or booking |
 | Reserve, cancel, partial handover, disputes | Chat between businesses |
-| Document upload and human review | Delivery tracking |
-| Android app, website | iPhone build (needs a paid Apple account) |
+| GST and document review, with full GST management | Password reset by email |
+| Website, Android app, iPhone via Expo Go | Standalone iPhone install (needs a paid Apple account) |
 
 **Three things worth saying plainly:**
 
-- 🔎 **GST is checked by a person, not by the government's system.** We check the number's format, then a reviewer looks at the document and records what they checked. Our own API says so: `"gst_verification": "manual_review"`.
-- 🚚 **Transport cost is an estimate.** Straight-line distance × 1.3, with a rate you can edit. Always get a real quote before collecting.
-- 🧠 **The AI only suggests.** It helps read a request in another language and suggests a category from a photo. Everything it returns is checked against our material list, and a person confirms it. It never changes a trust score, approves a GST number, or touches stock.
+- 🔎 **GST is checked by a person, not the government's system.** We check the number's format; the admin looks at the certificate and records what they checked. The API says so itself: `"gst_verification": "manual_review"`.
+- 🚚 **Transport cost is an estimate.** Straight-line distance × 1.3 with a rate you can change. Get a real quote before collecting.
+- 🧠 **The AI only suggests.** It reads requests in other languages and suggests a category from a photo. Every answer is checked against our material list, and a person confirms it. It never changes a trust score, approves GST, or touches stock.
 
 ---
 
@@ -403,10 +525,10 @@ We would rather be trusted than impressive.
 
 | Document | What's in it |
 | :-- | :-- |
-| [docs/architecture.md](docs/architecture.md) | Scoring formula, state machine, pooling rules, data model |
-| [docs/demo.md](docs/demo.md) | Five-minute walkthrough to present |
+| [docs/architecture.md](docs/architecture.md) | Roles, scoring formula, exchange states, pooling rules, data model |
+| [docs/demo.md](docs/demo.md) | Walkthrough to present, role by role |
 | [docs/validation.md](docs/validation.md) | What we tested, and the limits of those tests |
-| [docs/demo-script.md](docs/demo-script.md) | Voiceover script for the demo video, in English and Hindi |
+| [docs/demo-script.md](docs/demo-script.md) | Demo video voiceover, in English and Hindi |
 
 ---
 

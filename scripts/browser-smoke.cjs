@@ -6,7 +6,7 @@ const path = require("node:path");
 const { chromium, expect } = require("@playwright/test");
 const root = path.resolve(__dirname, "..");
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "materialsetu-qa-"));
-const shots = path.join(root, "docs/screenshots");
+const shots = process.env.SMOKE_SHOTS || path.join(os.tmpdir(), "materialsetu-smoke-shots");
 fs.mkdirSync(shots, { recursive: true });
 const children = [];
 const API_PORT = process.env.API_PORT || "8000";
